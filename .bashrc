@@ -201,3 +201,4 @@ export DOCKER_BUILDKIT=1
 # Some nice git defaults
 git config --global url."git@github.com:".insteadOf "https://github.com/"
 git config --global pull.rebase true
+# Test addition
