@@ -4,7 +4,7 @@ if [ -f /etc/bashrc ]; then
 fi
 
 
-PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin:$(npm root -g)
+PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin
 
 if type -P npm; then
   PATH=$PATH:$(npm root -g)
@@ -22,12 +22,12 @@ set skip-completed-text on
 set input-meta on
 set output-meta on
 set convert-meta off
-"\e[3;3~": kill-word
+#"\e[3;3~": kill-word
 
 # Use the text that has already been typed as the prefix for searching through
 # commands (i.e. more intelligent Up/Down behavior)
-"\e[B": history-search-forward
-"\e[A": history-search-backward
+#"\e[B": history-search-forward
+#"\e[A": history-search-backward
 
 # Enable bash programmable completion features in interactive shells
 if [ -f /usr/share/bash-completion/bash_completion ]; then
@@ -203,5 +203,5 @@ git config --global url."git@github.com:".insteadOf "https://github.com/"
 git config --global pull.rebase true
 
 
-~/.dotfiller/bin/dotfiller symlink_unattended
+~/.dotfiller/bin/dotfiller symlink_unattended &
 
