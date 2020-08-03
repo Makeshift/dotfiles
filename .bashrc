@@ -22,12 +22,6 @@ set skip-completed-text on
 set input-meta on
 set output-meta on
 set convert-meta off
-#"\e[3;3~": kill-word
-
-# Use the text that has already been typed as the prefix for searching through
-# commands (i.e. more intelligent Up/Down behavior)
-#"\e[B": history-search-forward
-#"\e[A": history-search-backward
 
 # Enable bash programmable completion features in interactive shells
 if [ -f /usr/share/bash-completion/bash_completion ]; then
@@ -85,7 +79,7 @@ function parse_git_dirty {
 
 
 #export PS1="\[\033[38;5;11m\]\u\[$(tput sgr0)\]\[\033[38;5;15m\]@\[$(tput sgr0)\]\[\033[38;5;9m\]\h\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;14m\][\w]\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;7m\]\$?\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;13m\]\`parse_git_branch\`\[$(tput sgr0)\]\[\033[38;5;10m\]\\$\[$(tput sgr0)\] "
-export PS1="\[\033[38;5;11m\]\u\[$(tput sgr0)\]\[\033[38;5;15m\]@\[$(tput sgr0)\]\[\033[38;5;9m\]\h\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;14m\][\w]\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;7m\]\$?\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;13m\]\[$(tput sgr0)\]\[\033[38;5;10m\]\\$\[$(tput sgr0)\] "
+#export PS1="\[\033[38;5;11m\]\u\[$(tput sgr0)\]\[\033[38;5;15m\]@\[$(tput sgr0)\]\[\033[38;5;9m\]\h\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;14m\][\w]\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;7m\]\$?\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;13m\]\[$(tput sgr0)\]\[\033[38;5;10m\]\\$\[$(tput sgr0)\] "
 extract () {
    if [ -f $1 ] ; then
        case $1 in
@@ -127,6 +121,7 @@ shopt -s histappend
 shopt -s cmdhist
 shopt -s nocaseglob
 shopt -s cdspell
+shopt -s dirspell
 shopt -s autocd
 shopt -s globstar
 # Ignore duplicates, ls without options and builtin commands
@@ -206,7 +201,7 @@ check-ssh-agent || {
     echo "$SSH_AUTH_SOCK" > ~/.tmp/ssh-agent.env
 }
 
-export PROMPT_COMMAND="history -a; history -c; history -r; ${PROMPT_COMMAND}"
+PROMPT_COMMAND="history -a; history -c; history -r; ${PROMPT_COMMAND}"
 export COMPOSE_DOCKER_CLI_BUILD=1
 export DOCKER_BUILDKIT=1
 
@@ -223,3 +218,4 @@ unset MANPATH  # delete if you already modified MANPATH elsewhere in your config
 export MANPATH="$NPM_PACKAGES/share/man:$(manpath)"
 
 [[ -s "$HOME/.qfc/bin/qfc.sh" ]] && source "$HOME/.qfc/bin/qfc.sh"
+[[ $- = *i* ]] && source ~/.config/liquidprompt/liquidprompt

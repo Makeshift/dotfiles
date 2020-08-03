@@ -71,7 +71,7 @@ class State(object):
         self._update()
 
     def append_match_to_input(self):
-        self.set_input(os.path.join(os.path.dirname(self.input), self.get_selected_match()) + ";\n\r")
+        self.set_input(os.path.join(os.path.dirname(self.input), self.get_selected_match()))
 
     def go_back(self):
         isdir = is_dir(self.input)
