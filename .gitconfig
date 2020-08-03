@@ -157,7 +157,7 @@
 
 [url "git@github.com:"]
 
-    insteadOf = "gh:"
+	insteadOf = https://github.com/
     pushInsteadOf = "github:"
     pushInsteadOf = "git://github.com/"
 
@@ -184,7 +184,7 @@
   insteadOf = https://bitbucket.org/
 
 [pull]
-    rebase = true
+	rebase = true
 [user]
     email = git@connor-bell.com
     name = Connor Bell
