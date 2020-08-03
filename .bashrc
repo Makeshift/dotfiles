@@ -202,11 +202,7 @@ export DOCKER_BUILDKIT=1
 git config --global url."git@github.com:".insteadOf "https://github.com/"
 git config --global pull.rebase true
 
-/home/connor/dotfiller/dotfiller symlink_unattended
 
 
-/home/connor/dotfiller/bootstrap.sh symlink_unattended
-
-
-/home/connor/.dotfiller/bin//home/connor/.dotfiller/bin/dotfiller symlink_unattended
+/home/connor/.dotfiller/bin/dotfiller symlink_unattended
 
