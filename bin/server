@@ -1,40 +1,34 @@
 #!/bin/bash
+# Written by Makeshift 03.08.20
+# https://github.com/Makeshift
+if [ ! -z "$1" ] && [[ "$1" =~ h* ]] || [[ "$1" =~ -h* ]] || [[ "$1" =~ --h* ]]; then
+    echo -e "
+Usage: ${0} [port]
+
+Will launch a HTTP server targetting the current directory, on the specified port (default 8000), trying servers in the following order:
+    python3 http.server
+    python2 SimpleHTTPServer
+    node http-server
+    netcat (Note that this one doesn't have a file list)
+    "
+    exit 1
+fi
+echo "Local:"
+ifconfig -a | /bin/grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }'
+echo -e "Public:\n    $(curl -s checkip.amazonaws.com)"
 port=${1:-8000}
-
-function python3_server() {
-    if type -P python3 > /dev/null; then
-        python3 -m http.server $1
-    else
-        python -m http.server $1
-    fi
-}
-
-function python2_server() {
-    if type -P python2 > /dev/null; then
-        python2 -m SimpleHTTPServer $1
-    else
-        python -m SimpleHTTPServer $1
-    fi
-}
-
-function node_server() {
-    http-server . -p $1
-}
 
 function bash_server() {
     echo "Note: This server does not have a file list, you must go to files directly."
     echo|read|{(read t;g=$(echo $t|cut -d' ' -f2)
-    while read|grep :;do :;done;[[ -e .$g &&! $g = *..* ]]||exit
-    printf "HTTP/1.1 200 OK\nContent-Length: $(stat -c%s .$g)\n\n"
+            while read|grep :;do :;done;[[ -e .$g &&! $g = *..* ]]||exit
+            printf "HTTP/1.1 200 OK\nContent-Length: $(stat -c%s .$g)\n\n"
     cat .$g)|nc -l -p $1;}>/dev/fd/0;$0 $1
 }
 
-if ( type -P python3 > /dev/null || ( type -P python > /dev/null && "$(python --version)" =~ Python 3* )) && (( type -p python3 > /dev/null && python3 -m http.server $port ) || ( type -p python > /dev/null && python -m http.server $port )); then
-    python3_server $port
-elif type -p python2 > /dev/null  || ( type -P python > /dev/null && "$(python --version)" =~ Python 2* ); then
-    python2_server $port
-elif type -p npm > /dev/null && type -p node > /dev/null && npm install -g http-server > /dev/null; then
-    node_server $port
-else
-    bash_server $port
+if python=$(type -P python3 || (type -P python > /dev/null && [[ "$(python --version)" =~ Python\ 3* ]] )) && $python -m http.server $port; then true
+    elif python=$(type -P python2 > /dev/null || (type -P python > /dev/null && [[ "$(python --version)" =~ Python\ 2* ]] )) && $python -m SimpleHTTPServer $port; then true
+    elif type -P npm > /dev/null && type -P node > /dev/null && npm install -g http-server && http-server . -p $port; then true
+    elif bash_server; then true
+else echo "We literally couldn't run any kind of webserver."
 fi
