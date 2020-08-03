@@ -162,7 +162,7 @@ alias egrep='egrep --color=auto'
 alias sudo='sudo '
 alias path='echo -e ${PATH//:/\\n}'
 # I have a lot of alias
-alias lsalias="/bin/grep -in --color -e '^alias\s+*' ~/mymacrc | sed 's/alias //' | /bin/grep --color -e ':[a-z][a-z0-9]*'"
+alias lsalias="/bin/grep -in --color -e '^alias\s+*' ~/.bashrc | sed 's/alias //' | /bin/grep --color -e ':[a-z][a-z0-9]*'"
 
 function ip() {
   echo "Local:"
@@ -181,9 +181,9 @@ function cd() {
 }
 function grep() {
   if type -P rg > /dev/null; then
-    rg --hidden $*
+    rg --hidden "$*"
   else
-    grep --color=auto -r $*
+    grep --color=auto -r "$*"
   fi
 }
 
@@ -216,6 +216,8 @@ export PATH="$NPM_PACKAGES/bin:$PATH"
 # command
 unset MANPATH  # delete if you already modified MANPATH elsewhere in your config
 export MANPATH="$NPM_PACKAGES/share/man:$(manpath)"
+
+export CDPATH=:..:~
 
 [[ -s "$HOME/.qfc/bin/qfc.sh" ]] && source "$HOME/.qfc/bin/qfc.sh"
 [[ $- = *i* ]] && source ~/.config/liquidprompt/liquidprompt
