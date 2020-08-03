@@ -50,4 +50,11 @@ LP_TITLE="$(_lp_title "$LP_PS1")"
 # Insert it in the prompt
 LP_PS1="${LP_TITLE}${LP_PS1}"
 
+PURPLE="\\033[1;35m"
+RED="\\033[1;31m"
+BOLD="\\e[1m"
+C="\\033[0m"
+
+LP_PS1="$(if ls /tmp/*.ACTIVE_STREAM > /dev/null 2>&1; then echo "${BOLD}${PURPLE}[${RED}*${PURPLE}]${C} "; fi)${LP_PS1}"
+
 # vim: set et sts=4 sw=4 tw=120 ft=sh:

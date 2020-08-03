@@ -163,6 +163,7 @@ alias sudo='sudo '
 alias path='echo -e ${PATH//:/\\n}'
 # I have a lot of alias
 alias lsalias="/bin/grep -in --color -e '^alias\s+*' ~/.bashrc | sed 's/alias //' | /bin/grep --color -e ':[a-z][a-z0-9]*'"
+alias reset="reset;clear"
 
 function ip() {
   echo "Local:"

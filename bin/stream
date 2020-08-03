@@ -7,14 +7,14 @@ Usage: ${0} [port]
 
 Will stream your current shell session to the given port (Default .
 People can then see your terminal by using 'nc <yourip> <port>'
-Use Ctrl+D to kill the stream.
+Use Ctrl+D (or type exit) to kill the stream.
     "
     exit 1
 fi
+source colors
 # Output some useful IPs
-echo "Local:"
-ifconfig -a | /bin/grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }'
-echo -e "Public:\n    $(curl -s checkip.amazonaws.com)"
+echo -e "${YELLOW}Local:${C}\n$(ifconfig -a | /bin/grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }')"
+echo -e "${YELLOW}Public:${C}\n    $(curl -s checkip.amazonaws.com)"
 port=${1:-8000}
 
 # If 8000 is in use, keep going up until we find one that's free
@@ -25,5 +25,19 @@ fi
 until ! lsof -Pi :"${port}" -sTCP:LISTEN -t > /dev/null; do
     port=$((port+1))
 done
-echo "Starting stream on port $port."
-echo "Use 'nc <your ip> $port "
+echo -e "${YELLOW}Starting stream on port $port.${C}"
+echo -e "${YELLOW}Use '${RED}nc <your ip> $port${YELLOW}' to connect.${C}"
+echo -e "${YELLOW}Use '${RED}Ctrl-D${YELLOW}' (or type exit) to kill the stream.${C}"
+file=$(mktemp) # Just for a filename
+rm $file
+# Named this so my shell can set up a [*] so I remember it's being recorded
+file="${file}.ACTIVE_STREAM"
+mkfifo "$file"
+nc -q0 -k -l "$port" < "$file" > /dev/null &
+NC_PID=$!
+script -f "$file"
+kill "$NC_PID" > /dev/null
+# Hides the nasty looking BG kill ;)
+wait "$NC_PID" 2> /dev/null
+rm "$file" > /dev/null
+echo -e "${YELLOW} Stream ended.${C}"

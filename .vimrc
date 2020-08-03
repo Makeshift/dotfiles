@@ -72,7 +72,20 @@ set shortmess=atI
 " Show the current mode
 set showmode
 " Show the filename in the window titlebar
-set title
+if has ("title")
+
+    " if there is no &t_ts sequence, is the terminal type known?
+    if &t_ts == "" && ( &term == "screen" || &term == "xterm" )
+        " add the missing control sequence for xterm or screen 
+        let &t_ts = "\e]2;"
+    endif
+
+    " enable setting the title only if vim can read the old one
+    if &t_ts != ""
+        set title
+    endif
+
+endif
 " Show the (partial) command as it’s being typed
 set showcmd
 " Use relative line numbers
