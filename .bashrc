@@ -203,6 +203,5 @@ git config --global url."git@github.com:".insteadOf "https://github.com/"
 git config --global pull.rebase true
 
 
-
-/home/connor/.dotfiller/bin/dotfiller symlink_unattended
+~/.dotfiller/bin/dotfiller symlink_unattended
 
