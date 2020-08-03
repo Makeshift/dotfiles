@@ -176,7 +176,13 @@ function ip() {
 }
 
 function cd() {
-  builtin cd "$*" && ls
+  local path=$1
+  shift
+  # If we try to CD to a file, cd to the dir it's in
+  if [ -f "$path" ]; then
+    path=$(dirname "$path")
+  fi
+  builtin cd "$path" $* && ls
 }
 function grep() {
   if type -P rg > /dev/null; then
@@ -208,8 +214,6 @@ export DOCKER_BUILDKIT=1
 git config --global url."git@github.com:".insteadOf "https://github.com/"
 git config --global pull.rebase true
 
-
-
 export NPM_PACKAGES="/home/connor/.npm-packages"
 export NODE_PATH="$NPM_PACKAGES/lib/node_modules${NODE_PATH:+:$NODE_PATH}"
 export PATH="$NPM_PACKAGES/bin:$PATH"
@@ -217,3 +221,5 @@ export PATH="$NPM_PACKAGES/bin:$PATH"
 # command
 unset MANPATH  # delete if you already modified MANPATH elsewhere in your config
 export MANPATH="$NPM_PACKAGES/share/man:$(manpath)"
+
+[[ -s "$HOME/.qfc/bin/qfc.sh" ]] && source "$HOME/.qfc/bin/qfc.sh"
