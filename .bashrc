@@ -6,7 +6,7 @@ fi
 
 PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin
 
-if type -P npm; then
+if type -P npm > /dev/null; then
   PATH=$PATH:$(npm root -g)
 fi
 
@@ -89,18 +89,22 @@ export PS1="\[\033[38;5;11m\]\u\[$(tput sgr0)\]\[\033[38;5;15m\]@\[$(tput sgr0)\
 extract () {
    if [ -f $1 ] ; then
        case $1 in
-           *.tar.bz2)   tar xvjf $1    ;;
-           *.tar.gz)    tar xvzf $1    ;;
-           *.bz2)       bunzip2 $1     ;;
-           *.rar)       unrar x $1       ;;
-           *.gz)        gunzip $1      ;;
-           *.tar)       tar xvf $1     ;;
-           *.tbz2)      tar xvjf $1    ;;
-           *.tgz)       tar xvzf $1    ;;
-           *.zip)       unzip $1       ;;
-           *.Z)         uncompress $1  ;;
-           *.7z)        7z x $1        ;;
-           *)           echo "don't know how to extract '$1'..." ;;
+        *.tar.xz)   tar -xvf "$1"                         ;;
+        *.tar.bz2)  tar -jxvf "$1"                        ;;
+        *.tar.gz)   tar -zxvf "$1"                        ;;
+        *.bz2)      bunzip2 "$1"                          ;;
+        *.dmg)      hdiutil mount "$1"                    ;;
+        *.gz)       gunzip "$1"                           ;;
+        *.tar)      tar -xvf "$1"                         ;;
+        *.tbz2)     tar -jxvf "$1"                        ;;
+        *.tgz)      tar -zxvf "$1"                        ;;
+        *.zip)      unzip "$1"                            ;;
+        *.pax)      cat "$1" | pax -r                     ;;
+        *.pax.z)    uncompress "$1" --stdout | pax -r     ;;
+        *.rar)      7z x "$1"                             ;;
+        *.z)        uncompress "$1"                       ;;
+        *.7z)       7z x "$1"                             ;;
+        *)          echo "'$1' cannot be extracted/mounted via extract()" ;;
        esac
    else
        echo "'$1' is not a valid file!"
@@ -162,10 +166,12 @@ alias fgrep='fgrep --color=auto'
 alias egrep='egrep --color=auto'
 alias sudo='sudo '
 alias path='echo -e ${PATH//:/\\n}'
+# I have a lot of alias
+alias lsalias="/bin/grep -in --color -e '^alias\s+*' ~/mymacrc | sed 's/alias //' | /bin/grep --color -e ':[a-z][a-z0-9]*'"
 
 function ip() {
   echo "Local:"
-  ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }'
+  ifconfig -a | /bin/grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }'
   echo -e "Public:\n    $(curl -s checkip.amazonaws.com)"
 }
 
@@ -173,7 +179,7 @@ function cd() {
   builtin cd "$*" && ls
 }
 function grep() {
-  if type -P rg; then
+  if type -P rg > /dev/null; then
     rg --hidden $*
   else
     grep --color=auto -r $*
