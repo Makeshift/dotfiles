@@ -253,11 +253,11 @@ export PATH="$NPM_PACKAGES/bin:$PATH"
 unset MANPATH  # delete if you already modified MANPATH elsewhere in your config
 export MANPATH="$NPM_PACKAGES/share/man:$(manpath)"
 
-#export CDPATH=:..:~
+export CDPATH=:..:~
 
 [[ -s "$HOME/.qfc/bin/qfc.sh" ]] && source "$HOME/.qfc/bin/qfc.sh"
 [[ $- = *i* ]] && source ~/.config/liquidprompt/liquidprompt
 
 source <(cod init $$ bash)
 
-neofetchMANPATH=$MANPATH:$HOME/share/man
+neofetch

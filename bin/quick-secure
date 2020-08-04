@@ -1,0 +1,2 @@
+#!/bin/bash
+curl -sfO https://raw.githubusercontent.com/marshyski/quick-secure/master/quick-secure && bash quick-secure
