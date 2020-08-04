@@ -162,6 +162,7 @@ alias path='echo -e ${PATH//:/\\n}'
 alias lsalias="/bin/grep -in --color -e '^alias\s+*' ~/.bashrc | sed 's/alias //' | /bin/grep --color -e ':[a-z][a-z0-9]*'"
 alias reset="reset;clear"
 alias lsdir="ls -d */"
+alias parallel="$HOME/bin/parallel"
 
 function ip() {
   echo "Local:"
@@ -251,4 +252,4 @@ export MANPATH="$NPM_PACKAGES/share/man:$(manpath)"
 
 source <(cod init $$ bash)
 
-neofetch
+neofetchMANPATH=$MANPATH:$HOME/share/man
