@@ -137,7 +137,8 @@ alias mount='mount |column -t'
 alias vi='vim'
 alias sudo='sudo -E'
 alias t='tail -f 2>&1 /dev/null'
-alias ls='ls -F --color=auto'
+#alias ls='ls -F --color=auto'
+alias ls='exa -F'
 alias ll='ls -lha --color=auto'
 alias cg='cd `git rev-parse --show-toplevel`'
 alias cd..='cd ..'
@@ -163,6 +164,13 @@ alias lsalias="/bin/grep -in --color -e '^alias\s+*' ~/.bashrc | sed 's/alias //
 alias reset="reset;clear"
 alias lsdir="ls -d */"
 alias parallel="$HOME/bin/parallel"
+alias cat="bat"
+
+export BAT_THEME="Solarized (dark)"
+
+if type -P node > /dev/null; then
+  export EDITOR=slap
+fi
 
 function ip() {
   echo "Local:"
