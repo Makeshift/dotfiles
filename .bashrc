@@ -3,6 +3,14 @@ if [ -f /etc/bashrc ]; then
         . /etc/bashrc
 fi
 
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     export os=Linux;;
+    Darwin*)    export os=Mac;;
+    CYGWIN*)    export os=Windows;;
+    MINGW*)     export os=Windows;;
+    *)          export os="UNKNOWN:${unameOut}"
+esac
 
 PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin
 
@@ -157,7 +165,6 @@ alias chgrp='chgrp --preserve-root'
 alias wget='wget -c'
 alias fgrep='fgrep --color=auto'
 alias egrep='egrep --color=auto'
-alias sudo='sudo '
 alias path='echo -e ${PATH//:/\\n}'
 # I have a lot of alias
 alias lsalias="/bin/grep -in --color -e '^alias\s+*' ~/.bashrc | sed 's/alias //' | /bin/grep --color -e ':[a-z][a-z0-9]*'"
@@ -165,6 +172,7 @@ alias reset="reset;clear"
 alias lsdir="ls -d */"
 alias parallel="$HOME/bin/parallel"
 alias cat="bat"
+alias vpn=xaval
 
 export BAT_THEME="Solarized (dark)"
 
@@ -231,7 +239,7 @@ check-ssh-agent() {
     [ -S "$SSH_AUTH_SOCK" ] && { ssh-add -l >& /dev/null || [ $? -ne 2 ]; }
 }
 
-check-ssh-agent || export SSH_AUTH_SOCK="$(< ~/.tmp/ssh-agent.env)"
+check-ssh-agent || export SSH_AUTH_SOCK="$(< ~/.tmp/ssh-agent.env > /dev/null)"
 check-ssh-agent || {
     eval "$(ssh-agent -s)" > /dev/null
     echo "$SSH_AUTH_SOCK" > ~/.tmp/ssh-agent.env
@@ -250,14 +258,14 @@ export NODE_PATH="$NPM_PACKAGES/lib/node_modules${NODE_PATH:+:$NODE_PATH}"
 export PATH="$NPM_PACKAGES/bin:$PATH"
 # Unset manpath so we can inherit from /etc/manpath via the `manpath`
 # command
-unset MANPATH  # delete if you already modified MANPATH elsewhere in your config
-export MANPATH="$NPM_PACKAGES/share/man:$(manpath)"
+unset MANPATH
+export MANPATH="$NPM_PACKAGES/share/man:$(type -P manpath > /dev/null && manpath)"
 
 export CDPATH=:..:~
 
 [[ -s "$HOME/.qfc/bin/qfc.sh" ]] && source "$HOME/.qfc/bin/qfc.sh"
 [[ $- = *i* ]] && source ~/.config/liquidprompt/liquidprompt
 
-source <(cod init $$ bash)
+if [ "$os" == "Linux" ]; then source <(cod init $$ bash); fi
 
 neofetch

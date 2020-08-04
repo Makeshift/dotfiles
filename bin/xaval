@@ -1,0 +1,376 @@
+#!/usr/bin/env bash
+#
+# xaval - xiringuito connection manager
+#
+[[ "${DEBUG}" == "true" ]] && set -x
+
+set -e
+set -o pipefail
+
+declare -r ROOT_DIR=${HOME}/.xiringuito
+declare -r DIR=${ROOT_DIR}/profiles; mkdir -p ${DIR}
+declare -r LOG_DIR=${ROOT_DIR}/logs; mkdir -p ${LOG_DIR}
+declare -r RECONNECT_AFTER=5
+declare -r WAIT_TIMEOUT=15
+
+declare -r ATTACH_MARKER="${ROOT_DIR}/attach"
+if [[ -f "${ATTACH_MARKER}" ]]; then
+  declare -r ATTACH=true
+else
+  declare -r ATTACH=false
+fi
+
+function print_help(){
+  cat <<EOF
+[ xaval - xiringuito connection manager ]
+
+Usage: ${0} connect|attach PROFILE
+       ${0} toggle
+       ${0} list [FILTER_EXPR]
+       ${0} kill PROFILE
+       ${0} logs PROFILE
+       ${0} create PROFILE XIRINGUITO_PARAMS
+       ${0} update PROFILE XIRINGUITO_PARAMS
+       ${0} upsert PROFILE XIRINGUITO_PARAMS
+       ${0} delete PROFILE
+       ${0} rename OLD_PROFILE NEW_PROFILE
+
+HINT: Run without any arguments to enter interactive mode!
+
+Examples:
+  ${0} create PROD -f 3 -X root@production.server.com 10.67.42.0/24 172.21.0.0/16
+  ${0} connect PROD
+
+EOF
+}
+
+function commit_suicide(){
+  echo "[ ERROR ]"
+  echo "${@}"
+  exit 1
+}
+
+function print_help_and_commit_suicide(){
+  print_help
+  commit_suicide "${@}"
+}
+
+function validate_command(){
+  for _CMD in 'connect' 'attach' 'toggle' 'list' 'kill' 'logs' 'create' 'update' 'upsert' 'delete' 'rename'; do
+    if [[ "${_CMD}" == "${1}" ]]; then
+      echo "${1}"
+      return
+    fi
+  done
+}
+
+function suicide_on_absent_profile(){
+  if [[ ! -f "${DIR}/${1}" ]]; then
+    commit_suicide "Profile does not exist: ${1}"
+  fi
+}
+
+function suicide_on_existing_profile(){
+  if [[ -f "${DIR}/${1}" ]]; then
+    commit_suicide "Profile already exists: ${1}"
+  fi
+}
+
+function get_profile_pid() {
+  local PROFILE=${1}
+
+  suicide_on_absent_profile ${PROFILE}
+
+  pgrep -U ${USER} -f -- "$(cat ${DIR}/${PROFILE} | sed 's/\+/\\\+/g')"
+}
+
+function get_profile_status() {
+  local PROFILE=${1}
+
+  suicide_on_absent_profile ${PROFILE}
+
+  if [[ "$(get_profile_pid ${PROFILE})" != "" ]]; then
+    echo "UP"
+  else
+    echo "DOWN"
+  fi
+}
+
+function suicide_on_profile_up(){
+  if [[ "$(get_profile_status ${1})" == "UP" ]]; then
+    commit_suicide "Profile already up: ${1}"
+  fi
+}
+
+function suicide_on_profile_down(){
+  if [[ "$(get_profile_status ${1})" == "DOWN" ]]; then
+    commit_suicide "Profile already down: ${1}"
+  fi
+}
+
+function do_mfa_prewarm(){
+  local PROFILE=${1}
+
+  suicide_on_absent_profile ${PROFILE}
+
+  local PROFILE_FILE=${DIR}/${PROFILE}
+
+  ROUTES_PASSED=$(egrep "[0-9]/[0-9]+$" ${PROFILE_FILE} >/dev/null && echo "true" || echo "false")
+  DISCOVERY_OFF=$(egrep "(^| )-X "      ${PROFILE_FILE} >/dev/null && echo "true" || echo "false")
+
+  if [[ "${ROUTES_PASSED}" == "false" && "${DISCOVERY_OFF}" == "false" ]]; then
+    echo "true"
+  else
+    echo "false"
+  fi
+}
+
+function select_profile(){
+  local START_NUMBER=1
+  local PROFILE_COUNT=$(list_profiles | wc -l | sed 's/ //g')
+
+  if [[ ${PROFILE_COUNT} -eq 0 ]]; then
+    print_help
+    echo "You have no profiles configured..."
+    exit 0
+  fi
+
+  list_profiles | awk '{printf "%2d) %s\n", NR, $0}' 
+  echo; read -p "PROFILE NUMBER (${START_NUMBER}-${PROFILE_COUNT})>" PROFILE_NUMBER
+
+  if [[ ${PROFILE_NUMBER} =~ "^[0-9]+$" ]]; then
+    commit_suicide "Should be a natural number!"
+  fi
+
+  if [[ ${PROFILE_NUMBER} -lt ${START_NUMBER} ]]; then
+    commit_suicide "Should be >= ${START_NUMBER}"
+  fi
+
+  if [[ ${PROFILE_NUMBER} -gt ${PROFILE_COUNT} ]]; then
+    commit_suicide "Should be <= ${PROFILE_COUNT}"
+  fi
+
+  local PROFILE=$(list_profiles | head -n${PROFILE_NUMBER} | tail -n1 | cut -d' ' -f1)
+
+  if [[ "${ATTACH}" == "true" ]]; then
+    attach_profile ${PROFILE}
+  else
+    connect_profile ${PROFILE}
+  fi
+}
+
+function list_profiles(){
+  local FILTER_EXPR="${@}"
+  if [[ -z "${FILTER_EXPR}" ]]; then
+    FILTER_EXPR=".*"
+  fi
+  for PROFILE in $(find ${DIR} -type f | awk -F"/" '{print $NF}' | egrep "${FILTER_EXPR}" | sort); do
+    printf "%-20s %-4s = %s\n" ${PROFILE} $(get_profile_status ${PROFILE}) "$(cat ${DIR}/${PROFILE})"
+  done
+}
+
+function create_profile(){
+  local PROFILE=${1}; shift
+
+  suicide_on_existing_profile ${PROFILE}
+
+  echo "${@}" >${DIR}/${PROFILE}
+}
+
+function update_profile(){
+  local PROFILE=${1}; shift
+
+  suicide_on_absent_profile ${PROFILE}
+
+  echo "${@}" >${DIR}/${PROFILE}
+}
+
+function upsert_profile(){
+  local PROFILE=${1}; shift
+
+  echo "${@}" >${DIR}/${PROFILE}
+}
+
+function delete_profile(){
+  local PROFILE=${1}
+
+  suicide_on_absent_profile ${PROFILE}
+
+  rm ${DIR}/${PROFILE}
+}
+
+function toggle_attach {
+  if [[ "${ATTACH}" == "true" ]]; then
+    rm "${ATTACH_MARKER}"
+    echo "ATTACH: ON->OFF"
+  else
+    touch "${ATTACH_MARKER}"
+    echo "ATTACH: OFF->ON"
+  fi
+}
+
+function loop_connection() {
+  trap "echo 'HUP is trapped'" HUP
+
+  local PROFILE=${1}
+
+  local TRY=true
+  local OPTS=""
+
+  set +e
+
+  while [[ ${TRY} == true ]]; do
+    $(dirname ${0})/xiringuito ${OPTS} $(cat ${DIR}/${PROFILE})
+    if [[ ${?} -eq 0 || ${?} -eq 143 ]]; then
+      echo "=> Will sleep ${RECONNECT_AFTER} seconds before reconnection..."
+      OPTS="-c"
+      sleep ${RECONNECT_AFTER}
+    else
+      TRY=false
+    fi
+  done
+}
+
+function attach_profile(){
+  local PROFILE=${1}
+
+  suicide_on_absent_profile ${PROFILE}
+  suicide_on_profile_up ${PROFILE}
+
+  loop_connection ${PROFILE}
+}
+
+function connect_profile(){
+  echo -n "[ sudo check ] "; sudo true; echo
+
+  local PROFILE=${1}
+
+  suicide_on_absent_profile ${PROFILE}
+  suicide_on_profile_up ${PROFILE}
+
+  local LOG_FILE=${LOG_DIR}/${PROFILE}
+
+  if [[ "$(do_mfa_prewarm ${PROFILE})" == "true" ]]; then
+    ./discover-routes $(awk '{print $NF}' ${DIR}/${PROFILE}) >/dev/null
+  fi
+
+  echo
+  echo "Connecting (in background): ${PROFILE}"
+  echo
+  echo "Use \"xaval logs ${PROFILE}\" to see connection logs"
+  loop_connection ${PROFILE} &>${LOG_FILE} &
+
+  wait_connection ${PROFILE}
+}
+
+function wait_connection(){
+  local PROFILE=${1}
+
+  sleep 2
+
+  local WAIT_TIME=0
+  while [[ "$(get_profile_status ${PROFILE})" != "UP" ]]; do
+    if [[ ${WAIT_TIME} -ge ${WAIT_TIMEOUT} ]]; then
+      dump_profile_log ${PROFILE}
+
+      commit_suicide "Unable to bring up \"${PROFILE}\" after ${WAIT_TIMEOUT} seconds"
+    fi
+
+    echo "* Waiting for connection to come up..."
+    sleep 1
+
+    ((++WAIT_TIME))
+  done
+}
+
+function kill_profile() {
+  local PROFILE=${1}
+
+  suicide_on_absent_profile ${PROFILE}
+  suicide_on_profile_down ${PROFILE}
+
+  kill -HUP $(get_profile_pid ${PROFILE})
+}
+
+function logs_profile() {
+  local PROFILE=${1}
+
+  suicide_on_absent_profile ${PROFILE}
+
+  local LOG_FILE=${LOG_DIR}/${PROFILE}
+
+  cat ${LOG_FILE}
+
+  echo
+  echo "STATUS: $(get_profile_status ${PROFILE})"
+}
+
+function dump_profile_log() {
+  local PROFILE=${1}
+
+  suicide_on_absent_profile ${PROFILE}
+
+  local LOG_FILE=${LOG_DIR}/${PROFILE}
+
+  echo "--- LOG ---" >>/dev/stderr
+  cat ${LOG_FILE} >>/dev/stderr
+  echo "--- LOG ---" >>/dev/stderr
+}
+
+function rename_profile(){
+  local OLD_PROFILE=${1}
+  local NEW_PROFILE=${2}
+
+  suicide_on_absent_profile ${OLD_PROFILE}
+  suicide_on_existing_profile ${NEW_PROFILE}
+
+  mv ${DIR}/${OLD_PROFILE} ${DIR}/${NEW_PROFILE}
+}
+
+if [[ $(echo "${@}" | egrep "((^|(^| )-{1,2})help|^-h)($| )") ]]; then
+  print_help
+  exit 0
+fi
+
+if [[ ${#} -eq 0 ]]; then
+  select_profile
+fi
+
+declare -r CMD=${1}; shift
+
+if [[ "${CMD}" == "" ]]; then
+  echo "- Bye bye!"
+  exit 0
+fi
+
+if [[ ! $(validate_command ${CMD}) ]]; then
+  print_help_and_commit_suicide "Illegal command: ${CMD}"
+fi
+
+if [[ "${CMD}" == "list" ]]; then
+  list_profiles "${@}"
+  exit 0
+fi
+
+# ... this happens when you do not like case..esac ...
+if [[ "${CMD}" == "connect" || "${CMD}" == "attach" || "${CMD}" == "delete"  || "${CMD}" == "kill" || "${CMD}" == "logs" ]]; then
+  if [[ ${#} -ne 1 ]]; then
+    print_help_and_commit_suicide "Command requires exactly 1 parameter: ${CMD}"
+  fi
+elif [[ ${CMD} == "rename" ]]; then
+  if [[ ${#} -ne 2 ]]; then
+    print_help_and_commit_suicide "Command requires exactly 2 parameters: ${CMD}"
+  fi
+elif [[ ${CMD} == "toggle" ]]; then
+  if [[ ${#} -ne 0 ]]; then
+    print_help_and_commit_suicide "Command does not require any parameters: ${CMD}"
+  fi
+  toggle_attach
+  exit 0
+else
+  if [[ ${#} -lt 2 ]]; then
+    print_help_and_commit_suicide "Not enough parameters for the command: ${CMD}"
+  fi
+fi
+
+eval ${CMD}_profile ${@}
