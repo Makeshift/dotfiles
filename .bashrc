@@ -141,9 +141,6 @@ alias ls='ls -F --color=auto'
 alias ll='ls -lha --color=auto'
 alias cg='cd `git rev-parse --show-toplevel`'
 alias cd..='cd ..'
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
 alias mkdir='mkdir -pv'
 alias df='df -H'
 alias du='du -ch'
@@ -175,12 +172,40 @@ function ip() {
 function cd() {
   local path=$1
   shift
+  # If $2 isn't empty, we probably intended to use autocd to go into a subdir, so let's try that
+  if [ ! -z "$2" ]; then
+    newpath="$path $*"
+    newpath=${newpath// /\/}
+    if [ -e "$newpath" ]; then
+      path="$newpath"
+    fi
+  fi
   # If we try to CD to a file, cd to the dir it's in
   if [ -f "$path" ]; then
     path=$(dirname "$path")
   fi
-  builtin cd "$path" $* && ls
+  # If path has a string containing > 2 dots, then you're an idiot who forgot your aliases, but we'll fix it anyway
+  if [[ "$path" =~ "..."  ]]; then
+    length=${#path}
+    dirs=$((length / 2))
+    unset path
+    for i in `seq $dirs`; do
+      path="${path}../"
+    done
+  fi
+  builtin cd "$path" && ls
 }
+
+function find() {
+  if type -P fd > /dev/null && [ "$#" -lt 2 ]; then
+    fd "$1"
+  elif [ "$#" -lt 2 ]; then
+    find -iname "*${1}*"
+  else
+    \find $*
+  fi
+}
+
 function grep() {
   if type -P rg > /dev/null; then
     rg --hidden "$*"
@@ -219,9 +244,11 @@ export PATH="$NPM_PACKAGES/bin:$PATH"
 unset MANPATH  # delete if you already modified MANPATH elsewhere in your config
 export MANPATH="$NPM_PACKAGES/share/man:$(manpath)"
 
-export CDPATH=:..:~
+#export CDPATH=:..:~
 
 [[ -s "$HOME/.qfc/bin/qfc.sh" ]] && source "$HOME/.qfc/bin/qfc.sh"
 [[ $- = *i* ]] && source ~/.config/liquidprompt/liquidprompt
+
+source <(cod init $$ bash)
 
 neofetch
