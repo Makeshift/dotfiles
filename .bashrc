@@ -15,7 +15,7 @@ esac
 PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin
 
 if type -P npm > /dev/null; then
-  PATH=$PATH:$(npm root -g)
+  PATH=$PATH:$(npm -s root -g)
 fi
 
 set bell-style visible
@@ -146,7 +146,6 @@ alias vi='vim'
 alias sudo='sudo -E'
 alias t='tail -f 2>&1 /dev/null'
 #alias ls='ls -F --color=auto'
-alias ls='exa -F'
 alias ll='ls -lha --color=auto'
 alias cg='cd `git rev-parse --show-toplevel`'
 alias cd..='cd ..'
@@ -170,15 +169,9 @@ alias path='echo -e ${PATH//:/\\n}'
 alias lsalias="/bin/grep -in --color -e '^alias\s+*' ~/.bashrc | sed 's/alias //' | /bin/grep --color -e ':[a-z][a-z0-9]*'"
 alias reset="reset;clear"
 alias lsdir="ls -d */"
-alias parallel="$HOME/bin/parallel"
-alias cat="bat"
 alias vpn=xaval
 
 export BAT_THEME="Solarized (dark)"
-
-if type -P node > /dev/null; then
-  export EDITOR=slap
-fi
 
 function ip() {
   echo "Local:"
@@ -239,6 +232,7 @@ check-ssh-agent() {
     [ -S "$SSH_AUTH_SOCK" ] && { ssh-add -l >& /dev/null || [ $? -ne 2 ]; }
 }
 
+mkdir -p ~/.tmp > /dev/null
 check-ssh-agent || export SSH_AUTH_SOCK="$(< ~/.tmp/ssh-agent.env > /dev/null)"
 check-ssh-agent || {
     eval "$(ssh-agent -s)" > /dev/null
@@ -266,6 +260,11 @@ export CDPATH=:..:~
 [[ -s "$HOME/.qfc/bin/qfc.sh" ]] && source "$HOME/.qfc/bin/qfc.sh"
 [[ $- = *i* ]] && source ~/.config/liquidprompt/liquidprompt
 
-if [ "$os" == "Linux" ]; then source <(cod init $$ bash); fi
+if [ "$os" == "Linux" ]; then 
+  source <(cod init $$ bash)
+  alias ls='exa -F'
+  alias cat="bat"
+  alias parallel="$HOME/bin/parallel"
+fi
 
 neofetch

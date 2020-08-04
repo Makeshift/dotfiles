@@ -83,7 +83,11 @@ LP_ENABLE_JOBS=1
 
 # Enable the load feature.
 # Recommended value is 1
-LP_ENABLE_LOAD=1
+if [ -z "$os" ] || [ "$os" != "Windows" ]; then
+    LP_ENABLE_LOAD=1
+else
+    LP_ENABLE_LOAD=0
+fi
 
 # Enable the battery feature.
 # Recommended value is 1
@@ -92,7 +96,11 @@ LP_ENABLE_BATT=1
 # Enable the 'sudo credentials' feature.
 # Be warned that this may pollute the syslog if you don't have sudo
 # credentials, and the sysadmin will hate you.
-LP_ENABLE_SUDO=1
+if [ -z "$os" ] || [ "$os" != "Windows" ]; then
+    LP_ENABLE_SUDO=1
+else
+    LP_ENABLE_SUDO=0
+fi
 
 # Enable the VCS features with the root account.
 # Recommended value is 0
