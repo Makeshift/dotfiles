@@ -223,3 +223,5 @@ export CDPATH=:..:~
 
 [[ -s "$HOME/.qfc/bin/qfc.sh" ]] && source "$HOME/.qfc/bin/qfc.sh"
 [[ $- = *i* ]] && source ~/.config/liquidprompt/liquidprompt
+
+neofetch
