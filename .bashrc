@@ -12,6 +12,10 @@ case "${unameOut}" in
     *)          export os="UNKNOWN:${unameOut}"
 esac
 
+if [[ "$(uname -r)" =~ "microsoft" ]]; then
+  export os=wsl
+fi
+
 PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin
 
 if type -P npm > /dev/null; then
