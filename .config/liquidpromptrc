@@ -96,7 +96,7 @@ LP_ENABLE_BATT=1
 # Enable the 'sudo credentials' feature.
 # Be warned that this may pollute the syslog if you don't have sudo
 # credentials, and the sysadmin will hate you.
-if [ -z "$os" ] || [ "$os" != "Windows" ]; then
+if [ -z "$os" ] || ([ "$os" != "Windows" ] && [ "$os" != "wsl" ]); then
     LP_ENABLE_SUDO=1
 else
     LP_ENABLE_SUDO=0

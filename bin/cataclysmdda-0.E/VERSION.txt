@@ -1,0 +1,5 @@
+Platform     : Linux_x64
+Graphics     : Curses
+Build number : #10898
+Build version: 0.E-4856-ga05e3e8
+Major version: 0.E

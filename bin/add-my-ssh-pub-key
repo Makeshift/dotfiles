@@ -19,3 +19,8 @@ chmod 644 ~/.ssh/config 2> /dev/null
 chmod 600 ~/.ssh/id_rsa 2> /dev/null
 chmod 644 ~/.ssh/id_rsa.pub 2> /dev/null
 chown -R $USER:$USER ~/.ssh 2> /dev/null
+
+if [ -d "~/.ssh/keys" ]; then
+    cd ~/.ssh/keys
+    chmod 600 *
+fi
