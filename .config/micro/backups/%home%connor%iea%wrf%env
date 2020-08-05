@@ -1,0 +1,8 @@
+#!/bin/bash
+
+REGION=Montserrat
+YEAR=2015
+MONTH=07
+WRF_RUN_STORE=/home/connor/iea/wrf/runs
+ERA5_DATA_STORE=/home/connor/iea/wrf/data
+WRF_VERSION=3.6
