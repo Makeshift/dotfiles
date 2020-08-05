@@ -132,6 +132,7 @@ shopt -s histappend
 # Combine multiline commands into one in history
 shopt -s cmdhist
 shopt -s nocaseglob
+shopt -s nocasematch
 shopt -s cdspell
 shopt -s dirspell
 shopt -s autocd
@@ -197,13 +198,18 @@ function ip() {
 }
 
 function cd() {
+  if [[ "$1" =~ "--" ]]; then
+    shift  
+  fi
   local path=$1
-  shift
   # If $2 isn't empty, we probably intended to use autocd to go into a subdir, so let's try that
   if [ ! -z "$2" ]; then
+    shift
     newpath="$path $*"
     newpath=${newpath// /\/}
-    if [ -e "$newpath" ]; then
+    newpath=${newpath#--}
+    newpath=${newpath#\/}
+    if [ -f "$(pwd)/$newpath" ] || [ -d "$(pwd)/$newpath" ]; then
       path="$newpath"
     fi
   fi
