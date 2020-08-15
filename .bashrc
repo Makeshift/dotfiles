@@ -12,6 +12,11 @@ case "${unameOut}" in
     *)          export os="UNKNOWN:${unameOut}"
 esac
 
+architecture="$(dpkg --print-architecture)"
+if [[ "$architecture" =~ "armhf" ]]; then
+    archstring="_arm32"
+fi
+
 if [[ "$(uname -r)" =~ "microsoft" ]]; then
   export os=wsl
 fi
@@ -44,54 +49,6 @@ fi
 
 stty -ixon
 
-function parse_git_branch() {
-        BRANCH=`git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
-        if [ ! "${BRANCH}" == "" ]
-        then
-                STAT=`parse_git_dirty`
-                echo "[${BRANCH}${STAT}]"
-        else
-                echo ""
-        fi
-}
-
-function parse_git_dirty {
-        status=`git status 2>&1 | tee`
-        dirty=`echo -n "${status}" 2> /dev/null | grep "modified:" &> /dev/null; echo "$?"`
-        untracked=`echo -n "${status}" 2> /dev/null | grep "Untracked files" &> /dev/null; echo "$?"`
-        ahead=`echo -n "${status}" 2> /dev/null | grep "Your branch is ahead of" &> /dev/null; echo "$?"`
-        newfile=`echo -n "${status}" 2> /dev/null | grep "new file:" &> /dev/null; echo "$?"`
-        renamed=`echo -n "${status}" 2> /dev/null | grep "renamed:" &> /dev/null; echo "$?"`
-        deleted=`echo -n "${status}" 2> /dev/null | grep "deleted:" &> /dev/null; echo "$?"`
-        bits=''
-        if [ "${renamed}" == "0" ]; then
-                bits=">${bits}"
-        fi
-        if [ "${ahead}" == "0" ]; then
-                bits="*${bits}"
-        fi
-        if [ "${newfile}" == "0" ]; then
-                bits="+${bits}"
-        fi
-        if [ "${untracked}" == "0" ]; then
-                bits="?${bits}"
-        fi
-        if [ "${deleted}" == "0" ]; then
-                bits="x${bits}"
-        fi
-        if [ "${dirty}" == "0" ]; then
-                bits="!${bits}"
-        fi
-        if [ ! "${bits}" == "" ]; then
-                echo " ${bits} "
-        else
-                echo ""
-        fi
-}
-
-
-#export PS1="\[\033[38;5;11m\]\u\[$(tput sgr0)\]\[\033[38;5;15m\]@\[$(tput sgr0)\]\[\033[38;5;9m\]\h\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;14m\][\w]\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;7m\]\$?\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;13m\]\`parse_git_branch\`\[$(tput sgr0)\]\[\033[38;5;10m\]\\$\[$(tput sgr0)\] "
-#export PS1="\[\033[38;5;11m\]\u\[$(tput sgr0)\]\[\033[38;5;15m\]@\[$(tput sgr0)\]\[\033[38;5;9m\]\h\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;14m\][\w]\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;7m\]\$?\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;13m\]\[$(tput sgr0)\]\[\033[38;5;10m\]\\$\[$(tput sgr0)\] "
 extract () {
    if [ -f $1 ] ; then
        case $1 in
@@ -137,33 +94,38 @@ shopt -s cdspell
 shopt -s dirspell
 shopt -s autocd
 shopt -s globstar
+shopt -s expand_aliases
 # Ignore duplicates, ls without options and builtin commands
 HISTCONTROL=ignoredups:erasedups:ignorespace
 export HISTIGNORE="&:ls:[bf]g:exit"
 export HISTTIMEFORMAT='%F %T '
 
 if type -P micro > /dev/null; then
-  export EDITOR=micro
-  alias vim=micro
+  export EDITOR=micro${archstring}
 else
   export EDITOR=vim
 fi
 
+function vim() {
+    if type -P micro > /dev/null; then
+        micro "$*"
+    else
+        vim "$*"
+    fi
+}
+
 export CLICOLOR=1
 export LS_COLORS='no=00:fi=00:di=00;34:ln=01;36:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:*.xml=00;31:'
 
-if [ "$os" == "Linux" ]; then 
-  source <(cod init $$ bash)
-  alias ls='exa -F'
-  alias cat="bat"
-  alias parallel="$HOME/bin/parallel"
-fi
+source <(cod${archstring} init $$ bash)
+alias ls="exa${archstring} -F"
+alias cat="bat$archstring"
+alias parallel="$HOME/bin/parallel"
 
 alias mount='mount |column -t'
 alias vi='vim'
 alias sudo='sudo -E'
 alias t='tail -f 2>&1 /dev/null'
-#alias ls='ls -F --color=auto'
 alias ll='ls -lha --color=auto'
 alias cg='cd `git rev-parse --show-toplevel`'
 alias cd..='cd ..'
@@ -188,10 +150,13 @@ alias lsalias="/bin/grep -in --color -e '^alias\s+*' ~/.bashrc | sed 's/alias //
 alias reset="reset;clear"
 alias lsdir="ls -d */"
 alias vpn=xaval
+alias disable-git-ps1='source $(which export-to-shell) LP_ENABLE_GIT=0' # Sometimes this lags real bad so I wanted a quick alias to disable it
+alias enable-git-ps1='source $(which export-to-shell) LP_ENABLE_GIT=1'
 
 export BAT_THEME="Solarized (dark)"
 
 function ip() {
+    # TODO: Update this to use ip, ifconfig is outdated
   echo "Local:"
   ifconfig -a | /bin/grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }'
   echo -e "Public:\n    $(curl -s checkip.amazonaws.com)"
@@ -231,7 +196,7 @@ function cd() {
 
 function find() {
   if type -P fd > /dev/null && [ "$#" -lt 2 ]; then
-    fd "$1"
+    fd${archstring} "$1"
   elif [ "$#" -lt 2 ]; then
     find -iname "*${1}*"
   else
@@ -241,7 +206,7 @@ function find() {
 
 function grep() {
   if type -P rg > /dev/null; then
-    rg --hidden "$*"
+    rg${archstring} --hidden "$*"
   else
     grep --color=auto -r "$*"
   fi
@@ -266,16 +231,9 @@ PROMPT_COMMAND="history -a; history -c; history -r; ${PROMPT_COMMAND}"
 export COMPOSE_DOCKER_CLI_BUILD=1
 export DOCKER_BUILDKIT=1
 
-# Some nice git defaults
-git config --global url."git@github.com:".insteadOf "https://github.com/"
-git config --global pull.rebase true
-
-export NPM_PACKAGES="/home/connor/.npm-packages"
+export NPM_PACKAGES="/home/$USER/.npm-packages"
 export NODE_PATH="$NPM_PACKAGES/lib/node_modules${NODE_PATH:+:$NODE_PATH}"
 export PATH="$NPM_PACKAGES/bin:$PATH"
-# Unset manpath so we can inherit from /etc/manpath via the `manpath`
-# command
-unset MANPATH
 export MANPATH="$NPM_PACKAGES/share/man:$(type -P manpath > /dev/null && manpath)"
 
 export CDPATH=:..:~

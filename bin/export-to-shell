@@ -1,0 +1,5 @@
+#!/bin/bash
+export $*
+
+# In .bashrc, create an alias like so:
+# alias disable-git-ps1='source $(which export-to-shell) LP_ENABLE_GIT=0'
