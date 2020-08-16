@@ -21,7 +21,7 @@ function findAndAdd() {
     file=$3
     if \egrep "$find" "$file"; then
         echo "Replacing $find with $replace"
-        sed -E "s/$find/$replace/gp" "$file"
+        sed -i -E "s/$find/$replace/gp" "$file"
     elif \egrep "${replace/ /[[:space:]]}" "$file"; then
         echo "$replace is already set"
     else
@@ -31,9 +31,9 @@ function findAndAdd() {
 }
 
 if [[ "$response" =~ ^(yes|y)$ ]]; then
-    findAndAdd "^ChallengeResponseAuthentication[[:space:]]+y" "ChallengeResponseAuthentication no" "/etc/ssh/sshd_config"
-    findAndAdd "^PasswordAuthentication[[:space:]]+y" "PasswordAuthentication no" "/etc/ssh/sshd_config"
+    findAndAdd "^ChallengeResponseAuthentication[[:space:]]+yes" "ChallengeResponseAuthentication no" "/etc/ssh/sshd_config"
+    findAndAdd "^PasswordAuthentication[[:space:]]+yes" "PasswordAuthentication no" "/etc/ssh/sshd_config"
     findAndAdd "^UsePAM[[:space:]]+y" "UsePAM no" "/etc/ssh/sshd_config"
-    findAndAdd "^PermitRootLogin[[:space:]]+y" "PermitRootLogin no" "/etc/ssh/sshd_config"
+    findAndAdd "^PermitRootLogin[[:space:]]+yes" "PermitRootLogin no" "/etc/ssh/sshd_config"
 fi
 

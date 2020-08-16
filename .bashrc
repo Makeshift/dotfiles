@@ -3,6 +3,12 @@ if [ -f /etc/bashrc ]; then
         . /etc/bashrc
 fi
 
+PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin
+
+if type -P npm > /dev/null; then
+  PATH=$PATH:$(npm -s root -g)
+fi
+
 unameOut="$(uname -s)"
 case "${unameOut}" in
     Linux*)     export os=Linux;;
@@ -21,12 +27,6 @@ fi
 
 if [[ "$(uname -r)" =~ "microsoft" ]]; then
   export os=wsl
-fi
-
-PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin
-
-if type -P npm > /dev/null; then
-  PATH=$PATH:$(npm -s root -g)
 fi
 
 set bell-style visible
@@ -110,7 +110,7 @@ fi
 
 function vim() {
     if type -P micro > /dev/null; then
-        micro "$*"
+        micro${archstring} "$*"
     else
         vim "$*"
     fi
