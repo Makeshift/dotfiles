@@ -1,0 +1,3 @@
+SSH_DEFAULT_OPTIONS = "-oUseRoaming=no -A"
+PATTERN_KEYS = r".*\.pem|.*\.pub"
+VERBOSITY = LOG_DEBUG

@@ -188,3 +188,6 @@
 [user]
     email = git@connor-bell.com
     name = Connor Bell (Makeshift)
+
+[init]
+    templateDir = "~/.git-template"

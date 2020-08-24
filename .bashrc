@@ -3,7 +3,7 @@ if [ -f /etc/bashrc ]; then
         . /etc/bashrc
 fi
 
-PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin
+PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin:/home/$USER/go/bin
 
 if type -P npm > /dev/null; then
   PATH=$PATH:$(npm -s root -g)
@@ -22,7 +22,7 @@ architecture="$(dpkg --print-architecture)"
 if [[ "$architecture" =~ "armhf" ]]; then
     archstring="_arm32"
 else
-    source <(cod${archstring} init $$ bash)
+    source <(cod init $$ bash)
 fi
 
 if [[ "$(uname -r)" =~ "microsoft" ]]; then
@@ -83,6 +83,9 @@ export LESS_TERMCAP_se=$'\E[0m'
 export LESS_TERMCAP_so=$'\E[01;44;33m'
 export LESS_TERMCAP_ue=$'\E[0m'
 export LESS_TERMCAP_us=$'\E[01;32m'
+export LS_COLORS=$LS_COLORS:'di=0;35:'
+export EXA_COLORS=$LS_COLORS
+
 
 export HISTFILESIZE=2000000
 export HISTSIZE=10000
@@ -123,9 +126,10 @@ alias ls="exa${archstring} -F"
 alias cat="bat$archstring"
 alias parallel="$HOME/bin/parallel"
 
+alias micro="micro${archstring}"
 alias mount='mount |column -t'
 alias vi='vim'
-alias sudo='sudo -E'
+alias sudo='sudo '
 alias t='tail -f 2>&1 /dev/null'
 alias ll='ls -lha --color=auto'
 alias cg='cd `git rev-parse --show-toplevel`'
@@ -134,10 +138,7 @@ alias mkdir='mkdir -pv'
 alias df='df -H'
 alias du='du -ch'
 alias python='python3'
-alias terragrunt='aws-vault exec iea -- terragrunt'
-alias terraform='aws-vault exec iea -- terraform'
-alias tf=terraform
-alias tg=terragrunt
+alias chamber='aws-vault exec iea -- chamber'
 alias rm='rm -I --preserve-root'
 alias chown='chown --preserve-root'
 alias chmod='chmod --preserve-root'
@@ -154,7 +155,29 @@ alias vpn=xaval
 alias disable-git-ps1='source $(which export-to-shell) LP_ENABLE_GIT=0' # Sometimes this lags real bad so I wanted a quick alias to disable it
 alias enable-git-ps1='source $(which export-to-shell) LP_ENABLE_GIT=1'
 
+# SSH ident stuff
+alias ssh="~/bin/ssh-ident"
+alias sftp="BINARY_SSH=sftp ~/bin/ssh-ident"
+alias scp='BINARY_SSH=scp ~/bin/ssh-ident'
+alias rsync='BINARY_SSH=rsync ~/bin/ssh-ident'
+
+
 export BAT_THEME="Solarized (dark)"
+
+tf_noauth_list="console fmt get login logout output providers validate 0\.13upgrade 0\.12upgrade"
+clean_tf() {
+  tfbin=$(which $1)
+  shift
+  if [[ $tf_noauth_list =~ (^|[[:space:]])$1($|[[:space:]]) ]]; then
+    $tfbin $@
+  else
+    aws-vault exec iea -- $tfbin $@
+  fi
+}
+terraform() { clean_tf "terraform" $@; }
+terragrunt() { clean_tf "terragrunt" $@; }
+alias tf=terraform
+alias tg=terragrunt
 
 function ip() {
     # TODO: Update this to use ip, ifconfig is outdated
@@ -196,12 +219,13 @@ function cd() {
 }
 
 function find() {
+  findbin=$(which find)
   if type -P fd > /dev/null && [ "$#" -lt 2 ]; then
     fd${archstring} "$1"
   elif [ "$#" -lt 2 ]; then
-    find -iname "*${1}*"
+    $findbin -iname "*${1}*"
   else
-    \find $*
+    $findbin $*
   fi
 }
 
@@ -222,11 +246,11 @@ check-ssh-agent() {
 }
 
 mkdir -p ~/.tmp > /dev/null
-check-ssh-agent || export SSH_AUTH_SOCK="$(< ~/.tmp/ssh-agent.env > /dev/null)"
-check-ssh-agent || {
-    eval "$(ssh-agent -s)" > /dev/null
-    echo "$SSH_AUTH_SOCK" > ~/.tmp/ssh-agent.env
-}
+# check-ssh-agent || export SSH_AUTH_SOCK="$(< ~/.tmp/ssh-agent.env > /dev/null)"
+# check-ssh-agent || {
+#     eval "$(ssh-agent -s)" > /dev/null
+#     echo "$SSH_AUTH_SOCK" > ~/.tmp/ssh-agent.env
+# }
 
 PROMPT_COMMAND="history -a; history -c; history -r; ${PROMPT_COMMAND}"
 export COMPOSE_DOCKER_CLI_BUILD=1
@@ -242,4 +266,8 @@ export CDPATH=:..:~
 [[ -s "$HOME/.qfc/bin/qfc.sh" ]] && source "$HOME/.qfc/bin/qfc.sh"
 [[ $- = *i* ]] && source ~/.config/liquidprompt/liquidprompt
 
+source ~/bin/bashmarks.sh
+
 neofetch
+
+cd /home/$USER/

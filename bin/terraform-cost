@@ -1,0 +1,2 @@
+#!/bin/bash
+terraform state pull | jq -cf ~/bin/terraform.jq | curl -s -X POST -H "Content-Type: application/json" -d @- https://cost.modules.tf/
