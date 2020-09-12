@@ -564,7 +564,6 @@ def FindKeys(identity, config):
         continue
       if not pattern.search(key):
         continue
-
       kinds = (
           ("private", "priv"),
           ("public", "pub"),
@@ -573,13 +572,17 @@ def FindKeys(identity, config):
       )
       for match, kind in kinds:
         if match in key:
+          print("Match found in key " + match + "_" + kind)
           found[key.replace(match, "")][kind] = key
+
 
   if not found:
     print("Warning: no keys found for identity {0} in:".format(identity),
         file=sys.stderr,
         loglevel=LOG_WARN)
     print(directories, file=sys.stderr, loglevel=LOG_WARN)
+
+  print("".format(found))
 
   return found
 
@@ -708,7 +711,9 @@ class AgentManager(object):
       iterable of strings, paths to private key files to load.
     """
     loaded = set(self.GetLoadedKeys())
+    print("Loaded keys: " + "".format(loaded))
     toload = set()
+    print("".format(keys))
     for key, config in keys.items():
       if "pub" not in config:
         continue
@@ -1014,6 +1019,7 @@ def main(argv):
   ParseCommandLine(argv, config)
   identity = FindIdentity(argv, config)
   keys = FindKeys(identity, config)
+  print("FOUND KEYS: " + "".format(keys))
   sshconfig = FindSSHConfig(identity, config)
   agent = AgentManager(identity, sshconfig, config)
 

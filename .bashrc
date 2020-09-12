@@ -156,13 +156,16 @@ alias disable-git-ps1='source $(which export-to-shell) LP_ENABLE_GIT=0' # Someti
 alias enable-git-ps1='source $(which export-to-shell) LP_ENABLE_GIT=1'
 
 # SSH ident stuff
-alias ssh="~/bin/ssh-ident"
 alias sftp="BINARY_SSH=sftp ~/bin/ssh-ident"
 alias scp='BINARY_SSH=scp ~/bin/ssh-ident'
 alias rsync='BINARY_SSH=rsync ~/bin/ssh-ident'
 
+# Stop vault from pestering me
+export AWS_VAULT_FILE_PASSPHRASE=""
 
 export BAT_THEME="Solarized (dark)"
+
+alias forget="history -d $((HISTCMD-1))"
 
 tf_noauth_list="console fmt get login logout output providers validate 0\.13upgrade 0\.12upgrade"
 clean_tf() {
@@ -178,6 +181,15 @@ terraform() { clean_tf "terraform" $@; }
 terragrunt() { clean_tf "terragrunt" $@; }
 alias tf=terraform
 alias tg=terragrunt
+
+aws() {
+	aws-vault exec iea -- aws $@
+}
+
+ecs_cli() {
+	aws-vault exec iea -- ecs-cli $@
+}
+alias ecs-cli=ecs_cli
 
 function ip() {
     # TODO: Update this to use ip, ifconfig is outdated
