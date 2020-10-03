@@ -1,9 +1,9 @@
-[ -z "$PS1" ] && return
+#[ -z "$PS1" ] && return
 if [ -f /etc/bashrc ]; then
         . /etc/bashrc
 fi
 
-PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin:/home/$USER/go/bin
+PATH=$PATH:/home/$USER/bin:/home/$USER/.local/bin:/home/$USER/go/bin:/home/connor/.dotfiller/bin/:/usr/local/bin/
 
 if type -P npm > /dev/null; then
   PATH=$PATH:$(npm -s root -g)
@@ -27,6 +27,7 @@ fi
 
 if [[ "$(uname -r)" =~ "microsoft" ]]; then
   export os=wsl
+  $(dropbox start 2>&1 > /dev/null) &
 fi
 
 set bell-style visible
@@ -138,7 +139,6 @@ alias mkdir='mkdir -pv'
 alias df='df -H'
 alias du='du -ch'
 alias python='python3'
-alias chamber='aws-vault exec iea -- chamber'
 alias rm='rm -I --preserve-root'
 alias chown='chown --preserve-root'
 alias chmod='chmod --preserve-root'
@@ -154,27 +154,42 @@ alias lsdir="ls -d */"
 alias vpn=xaval
 alias disable-git-ps1='source $(which export-to-shell) LP_ENABLE_GIT=0' # Sometimes this lags real bad so I wanted a quick alias to disable it
 alias enable-git-ps1='source $(which export-to-shell) LP_ENABLE_GIT=1'
+alias forget="history -d $((HISTCMD-1))"
 
 # SSH ident stuff
 alias sftp="BINARY_SSH=sftp ~/bin/ssh-ident"
 alias scp='BINARY_SSH=scp ~/bin/ssh-ident'
 alias rsync='BINARY_SSH=rsync ~/bin/ssh-ident'
+alias ssh='BINARY_SSH=ssh ~/bin/ssh-ident'
+alias git='BINARY_SSH=git ~/bin/ssh-ident'
+alias xiringuito='BINARY_SSH=git ~/bin/ssh-ident'
+alias go='BINARY_SSH=go ~/bin/ssh-ident'
 
-# Stop vault from pestering me
+# AWS
 export AWS_VAULT_FILE_PASSPHRASE=""
+export AWS_VAULT_BACKEND=file
+export AWS_VAULT_FILE_PASSPHRASE=
 
-export BAT_THEME="Solarized (dark)"
+if [ -f "/usr/local/bin/aws_completer" ]; then
+  complete -C '/usr/local/bin/aws_completer' aws
+fi
 
-alias forget="history -d $((HISTCMD-1))"
+aws_vault_prefix="aws-vault exec iea -- "
+alias work="aws-vault exec iea --server"
+if [ ! -z ${AWS_VAULT+x} ]; then
+  aws_vault_prefix=""
+fi
 
-tf_noauth_list="console fmt get login logout output providers validate 0\.13upgrade 0\.12upgrade"
+alias chamber='${aws_vault_prefix}chamber'
+
+tf_noauth_list="fmt get login logout providers validate 0\.13upgrade 0\.12upgrade"
 clean_tf() {
   tfbin=$(which $1)
   shift
   if [[ $tf_noauth_list =~ (^|[[:space:]])$1($|[[:space:]]) ]]; then
     $tfbin $@
   else
-    aws-vault exec iea -- $tfbin $@
+    ${aws_vault_prefix}$tfbin $@
   fi
 }
 terraform() { clean_tf "terraform" $@; }
@@ -183,13 +198,15 @@ alias tf=terraform
 alias tg=terragrunt
 
 aws() {
-	aws-vault exec iea -- aws $@
+	${aws_vault_prefix}aws $@
 }
 
 ecs_cli() {
-	aws-vault exec iea -- ecs-cli $@
+	${aws_vault_prefix}ecs-cli $@
 }
 alias ecs-cli=ecs_cli
+
+# Random functions
 
 function ip() {
     # TODO: Update this to use ip, ifconfig is outdated
@@ -243,9 +260,9 @@ function find() {
 
 function grep() {
   if type -P rg > /dev/null; then
-    rg${archstring} --hidden "$*"
+    rg${archstring} --hidden --smart-case $*
   else
-    grep --color=auto -r "$*"
+    grep --color=auto -r $*
   fi
 }
 
@@ -274,6 +291,7 @@ export PATH="$NPM_PACKAGES/bin:$PATH"
 export MANPATH="$NPM_PACKAGES/share/man:$(type -P manpath > /dev/null && manpath)"
 
 export CDPATH=:..:~
+export BAT_THEME="Solarized (dark)"
 
 [[ -s "$HOME/.qfc/bin/qfc.sh" ]] && source "$HOME/.qfc/bin/qfc.sh"
 [[ $- = *i* ]] && source ~/.config/liquidprompt/liquidprompt

@@ -1,1 +1,1 @@
-SSH_DEFAULT_OPTIONS = "-oUseRoaming=no -A"
+#SSH_DEFAULT_OPTIONS = "-oUseRoaming=no -A"

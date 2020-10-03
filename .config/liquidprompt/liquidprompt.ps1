@@ -27,9 +27,9 @@
 
 # Remember that most features come with their corresponding colors,
 # see the README.
-
+C="\\033[0m"
 # add time, jobs, load and battery
-LP_PS1="${LP_PS1_PREFIX}${LP_TIME}${LP_BATT}${LP_LOAD}${LP_JOBS}"
+LP_PS1="${C}${LP_PS1_PREFIX}${LP_TIME}${LP_BATT}${LP_LOAD}${LP_JOBS}"
 # add user, host and permissions colon
 LP_PS1="${LP_PS1}${LP_BRACKET_OPEN}${LP_USER}${LP_HOST}${LP_PERM}"
 
@@ -53,7 +53,6 @@ LP_PS1="${LP_TITLE}${LP_PS1}"
 PURPLE="\\033[1;35m"
 RED="\\033[1;31m"
 BOLD="\\e[1m"
-C="\\033[0m"
 
 LP_PS1="$(if ls /tmp/*.ACTIVE_STREAM > /dev/null 2>&1; then echo "${BOLD}${PURPLE}[${RED}*${PURPLE}]${C} "; fi)${LP_PS1}"
 

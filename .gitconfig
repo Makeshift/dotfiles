@@ -154,7 +154,7 @@
     followTags = true
 
 # URL shorthands
-
+#
 [url "git@github.com:"]
 
 insteadOf = https://github.com/
@@ -175,7 +175,7 @@ pushInsteadOf = "git://gist.github.com/"
 
 insteadOf = "gist:"
 
-# Enforce SSH
+## Enforce SSH
 [url "ssh://git@github.com/"]
   insteadOf = https://github.com/
 [url "ssh://git@gitlab.com/"]
@@ -188,6 +188,9 @@ insteadOf = "gist:"
 [user]
     email = git@connor-bell.com
     name = Connor Bell (Makeshift)
+	signingkey = 46799BD3EFAA2305
 
 [init]
     templateDir = "~/.git-template"
+[commit]
+	gpgsign = true
