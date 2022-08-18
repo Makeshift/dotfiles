@@ -1,0 +1,19 @@
+#bind c screen bash -ic 'HISTFILE=~/.bash_history.${WINDOW} bash'
+#bind ^C screen bash -ic 'HISTFILE=~/.bash_history.${WINDOW} bash'
+startup_message off
+defscrollback 32000
+defutf8 on
+mousetrack on
+defmousetrack on
+
+bindkey ^[[1;7D prev
+bindkey ^[[1;7C next
+bind x remove
+
+hardstatus alwayslastline
+hardstatus string "%-w%{= BW}%50>%n %t%{-}%+w%<"
+#hardstatus alwayslastline '%{= kg}[ %{G}%H %{g}][%= %{= kB}%?%-Lw%?%{+b r}(%{G}%n*%f %t%?(%u)%?%{r})%{-b B}%?%+Lw%?%?%= %{g}%]'
+nonblock on
+altscreen on
+attrcolor b ".I"
+shell -$SHELL

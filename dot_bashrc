@@ -1,0 +1,179 @@
+#!/bin/bash
+set -a
+###### Source vars we don't sync to git ######
+[ -f .bash_secret ] && . "$HOME/.bash_secret"
+
+#### General PATH stuff and imports ####
+PATH="/home/$USER/bin:/home/$USER/.local/bin:/home/$USER/go/bin:$HOME/.cargo/bin:/usr/local/go/bin:$PATH"
+
+# NPM / NVM
+if command -v nvm >/dev/null; then
+  export NVM_DIR="$HOME/.nvm"
+  # shellcheck source=/home/connor/.nvm/nvm.sh
+  [ -f "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+  # shellcheck source=/home/connor/.nvm/bash_completion
+  [ -f "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+  nvm current use "$(nvm current)"
+fi
+
+# Golang
+export GOPATH="$HOME/go"
+
+# Rust
+[ -f "$HOME/.cargo/env" ] && command -v cargo >/dev/null && . "$HOME/.cargo/env"
+
+#### Architecture ####
+unameOut="$(uname -s)"
+case "${unameOut}" in
+Linux*) export os=Linux ;;
+Darwin*) export os=Mac ;;
+CYGWIN*) export os=Windows ;;
+MINGW*) export os=Windows ;;
+*) export os="UNKNOWN:${unameOut}" ;;
+esac
+
+# Handle armhf systems by appending _arm32 to compiled binaries in ~/bin
+architecture="$(dpkg --print-architecture)"
+export architecture
+if [[ "$architecture" =~ "armhf" ]]; then
+  export archstring="_arm32"
+fi
+
+#### WSL ####
+fix_wsl2_interop() {
+  for i in $(pstree -np -s $$ | grep -o -E '[0-9]+'); do
+    if [[ -e "/run/WSL/${i}_interop" ]]; then
+      export WSL_INTEROP=/run/WSL/${i}_interop
+    fi
+  done
+}
+
+# WSL has no systemd, so start stuff we care about manually
+if [[ "$(uname -r)" =~ "microsoft" ]]; then
+  export os=wsl
+  fix_wsl2_interop
+  sudo service duplicati start >/dev/null
+  sudo service docker start >/dev/null
+  eval "$(ssh-agent)" >/dev/null
+  ssh-add >/dev/null
+fi
+
+#### Shell Options ####
+shopt -s checkwinsize # Resize the window after every command
+shopt -s histappend   # Appends to the history file rather than overwriting it
+shopt -s cmdhist      # Combine multiline commands into one in history
+shopt -s nocaseglob   # Match filenames without regard to case
+shopt -s nocasematch  # Match patterns without regard to case
+shopt -s cdspell      # Fixes typos when cd'ing
+shopt -s dirspell     # Fixes typos when using dirs
+shopt -s globstar     # Allows you to use ** in pathnames
+# Ignore duplicates, ls without options and builtin commands
+HISTCONTROL=ignoredups:erasedups:ignorespace
+# History between multiple sessions (but breaks command numbers, meh)
+export PROMPT_COMMAND="history -a; history -c; history -r; ${PROMPT_COMMAND}"
+export HISTIGNORE="&:ls:[bf]g:exit"
+export HISTTIMEFORMAT='%F %T '
+
+#### Editors ####
+# Editor preference order
+# Also skip micro if we're in the vscode terminal because vscode eats keybinds
+if command -v micro >/dev/null && [ "$TERM_PROGRAM" != "vscode" ]; then
+  export EDITOR=micro
+elif command -v nano >/dev/null; then
+  export EDITOR=nano
+elif command -v vim >/dev/null; then
+  export EDITOR=vim
+elif command -v vi >/dev/null; then
+  export EDITOR=vi
+fi
+
+alias micro='$EDITOR'
+alias nano='$EDITOR'
+alias vim='$EDITOR'
+alias vi='$EDITOR'
+
+#### Global aliases ####
+alias chown='chown --preserve-root' # Don't let me mess up root
+alias chmod='chmod --preserve-root' # Don't let me mess up root
+alias chgrp='chgrp --preserve-root' # Don't let me mess up root
+alias tf=terraform                  # Terraform
+alias tg=terragrunt                 # Terragrunt
+alias rm='rm --preserve-root'       # Overwritten in .bash_interactive if interactive
+alias python='python3'              # I literally never want python2 by accident
+alias t='tail -f 2>&1 /dev/null'    # Just keeps a session going
+
+# If there are files in our home bin with an archstring that matches our arch
+#  then create aliases to them so they take priority over PATH
+if [ -n "${archstring}" ]; then
+  for file in $HOME/bin/*${archstring}; do
+    file=$(basename "$file")
+    file=${file%$archstring}
+    alias ${file}=${file}${archstring}
+  done
+fi
+
+#### Global Functions ####
+function telegram() {
+  if which shoutrrr >/dev/null; then
+    shoutrrr send "$SHOUTRRR_TELEGRAM_CHAT_URI" "$*"
+  fi
+}
+
+#### Docker ####
+export COMPOSE_DOCKER_CLI_BUILD=1
+export DOCKER_BUILDKIT=1
+
+#### AWS ####
+# See .bash_secret for:
+# AWS_VAULT_BACKEND
+# AWS_VAULT_FILE_PASSPHRASE
+# AWS_PROFILE
+# export VAULTIFY_DEBUG=1
+AWS_PROGRAMS_TARGET_PATH="/usr/local/sbin"
+
+if command -v aws_completer >/dev/null; then
+  complete -C "$(command -v aws_completer)" aws
+fi
+
+# This 'vaultify' script wraps the given program with aws-vault
+if [ ! -f "$AWS_PROGRAMS_TARGET_PATH/vaultify" ]; then
+  cat >"$AWS_PROGRAMS_TARGET_PATH/vaultify" <<"EOF"
+#!/bin/bash
+function debug() { if [ -n "$VAULTIFY_DEBUG" ]; then echo "$@" >$(tty); fi; }
+program_name=$(basename "$0")
+debug "Called by: $program_name in CWD $PWD"
+current_script_path="$0"
+debug "Current script path: $current_script_path"
+executables_on_path=$(which -a "$program_name")
+debug "Matching executables on path: ${executables_on_path[*]}"
+actual_program=$(echo "${executables_on_path[*]}" | grep -v "$current_script_path" | head -n1)
+debug "First matching executable not including current script path: $actual_program"
+vault_exe=$(command -v aws-vault)
+if [ -n "$AWS_SESSION_TOKEN" ]; then
+  debug "AWS session token already set, so vault has probably already been ran, not running again"
+  final_exec="$actual_program $*"
+else
+  final_exec="${vault_exe} exec ${AWS_PROFILE} -- ${actual_program} $*"
+fi
+debug "Final command: $final_exec"
+eval "$final_exec"
+
+EOF
+  chmod +x "$AWS_PROGRAMS_TARGET_PATH/vaultify"
+fi
+# This function creates a new wrapper script in $AWS_PROGRAMS_TARGET_PATH, which by default is /usr/local/sbin as it is earlier in the PATH than
+#  /usr/local/bin, meaning it will be found first by commands/scripts looking for executables.
+function make_vault_script() {
+  local program="$1"
+  if [ ! -f "$AWS_PROGRAMS_TARGET_PATH/$program" ]; then
+    ln -s "$AWS_PROGRAMS_TARGET_PATH/vaultify" "$AWS_PROGRAMS_TARGET_PATH/$program"
+  fi
+}
+# Create vault scripts for programs requiring AWS credentials
+vaultify_programs=("aws" "terraform" "terragrunt" "ecs-cli" "chamber" "terragrunt-status" "awslogs" "aws-shell")
+for program in "${vaultify_programs[@]}"; do
+  make_vault_script "$program"
+done
+
+# If we're in an interactive shell, run a script specifically for that
+[[ $- == *i* ]] && [ -f .bash_interactive ] && . "$HOME/.bash_interactive"

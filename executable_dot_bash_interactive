@@ -1,0 +1,265 @@
+#!/bin/bash
+set -a
+# This script is called if we're in an interactive shell only
+
+# Set a bunch of useful stuff
+set bell-style visible
+set completion-ignore-case on
+set show-all-if-ambiguous on
+set mark-symlinked-directories on
+set match-hidden-files off
+set page-completions off
+set completion-query-items 200
+set visible-stats on
+set skip-completed-text on
+set input-meta on
+set output-meta on
+set convert-meta off
+
+# Enable bash programmable completion features in interactive shells
+if [ -f /usr/share/bash-completion/bash_completion ]; then
+  . /usr/share/bash-completion/bash_completion
+elif [ -f /etc/bash_completion ]; then
+  . /etc/bash_completion
+fi
+
+stty -ixon # disables ctrl+s and ctrl+q from scroll locking
+
+# Manpages/less colouring
+export LESS_TERMCAP_mb=$'\E[01;31m'
+export LESS_TERMCAP_md=$'\E[01;31m'
+export LESS_TERMCAP_me=$'\E[0m'
+export LESS_TERMCAP_se=$'\E[0m'
+export LESS_TERMCAP_so=$'\E[01;44;33m'
+export LESS_TERMCAP_ue=$'\E[0m'
+export LESS_TERMCAP_us=$'\E[01;32m'
+export LS_COLORS='no=00:fi=00:di=00;34:ln=01;36:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:*.xml=00;31:'
+export EXA_COLORS=$LS_COLORS
+export HISTFILESIZE=2000000
+export HISTSIZE=10000
+export CLICOLOR=1
+
+shopt -s autocd         # If you just type a dir name, cd to it
+shopt -s expand_aliases # Expands aliases
+
+export CDPATH=:..:$HOME # Search the current dir, above dir and home dir for cd targets
+
+######## Aliases ########
+
+function tableise() {
+  local data="$1"
+  local seperator="${2-NOSEP}"
+  local arg
+  if command -v mlr >/dev/null; then
+    [[ "$seperator" != "NOSEP" ]] && arg="--ifs $seperator" || arg=""
+    # shellcheck disable=SC2086
+    echo -e "$data" | mlr --csvlite $arg --opprint --barred cat
+  else
+    [[ "$seperator" != "NOSEP" ]] && arg="--s $seperator" || arg=""
+    # shellcheck disable=SC2086
+    echo -e "$data" | column -t $arg
+  fi
+}
+
+function trim() {
+  local var="$*"
+  var="${var#"${var%%[![:space:]]*}"}"
+  var="${var%"${var##*[![:space:]]}"}"
+  echo -n "$var"
+}
+
+function trimQuotes() {
+  local var="$*"
+  var="${var%\"}"
+  var="${var#\"}"
+  var="${var%\'}"
+  var="${var#\'}"
+  echo -n "$var"
+}
+
+function escapeDoubleQuotes() {
+  local var="$*"
+  var="${var//\"/\\\"}"
+  echo -n "$var"
+}
+
+function makeAliasTable() {
+  local list
+  list=$(/bin/grep -i --no-filename '^alias\s+*' $HOME/.bashrc $HOME/.bash_interactive | sed "s/alias //g")
+  local sep="|||"
+  local colourEnd="\033[0m"
+  local nicelist="${colourEnd}Alias${colourEnd}${sep}${colourEnd}Command${colourEnd}${sep}${colourEnd}Description${colourEnd}\n"
+  local count=0
+  while read -r line; do
+    local IFS alias_string command_string description_string
+    count=$((count + 1))
+    IFS='=' read -ra splitByEquals <<<"$line"
+    alias_string=$(trim "${splitByEquals[0]}")
+    local secondPart="${splitByEquals[*]:1}"
+    IFS='#' read -ra splitByHash <<<"${secondPart}"
+    command_string=$(trim "${splitByHash[0]}")
+    command_string=$(trimQuotes "${command_string}")
+    description_string=$(trim "${splitByHash[*]:1}")
+    local colourStart="\033[0m"
+    if [ $((count % 2)) -eq 1 ]; then
+      colourStart="\033[1m"
+    fi
+    nicelist+="${colourStart}${alias_string}${colourEnd}${sep}${colourStart}${command_string}${colourEnd}${sep}${colourStart}${description_string}${colourEnd}\n"
+    unset IFS
+  done <<<"$list"
+  tableise "$nicelist" "$sep"
+}
+
+alias aliases=makeAliasTable
+# Use ripgrep if it's available
+if command -v rg >/dev/null; then
+  alias grep=rg
+  # ripgrep is recursive by default
+  alias rgrep=rg
+  alias egrep='rg --pcre2'
+  alias fgrep='rg -F'
+else
+  alias grep='grep -r --color=auto'
+  alias rgrep='grep -r --color=auto'
+  alias egrep='grep -E --color=auto'
+  alias fgrep='grep -F --color=auto'
+fi
+if command -v exa >/dev/null; then alias ls="exa -F"; fi # Use exa if it's available
+if command -v bat >/dev/null; then
+  export BAT_THEME="Solarized (dark)"
+  alias cat="bat" # Use bat if it's available
+fi                                                      
+if command -v dust >/dev/null; then 
+  alias du="dust" # Use dust if it's available
+else
+  alias du="du -ch" # Makes du human readable and gives a grand total
+fi 
+
+# If no args are provided, pretty print mounts
+function mount() {
+  local cmd
+  cmd=$(command -v mount)
+  if [ -n "$1" ]; then
+    $cmd "$@"
+  else
+    $cmd | column -t
+  fi
+}
+
+function dcu() {
+  docker-compose "$@" up -d
+  docker-compose "$@" logs -f --tail 50
+}
+
+function dcr() {
+  docker-compose "$@" restart
+  docker-compose "$@" logs -f --tail 50
+}
+
+function getips() {
+  echo "Local:"
+  ifconfig -a | /bin/grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }'
+  echo -e "Public:\n    $(curl -m 2 -s checkip.amazonaws.com || echo Unknown)"
+}
+
+# Make cd a bit smarter
+function cd() {
+  if [[ "$1" =~ "--" ]]; then
+    shift
+  fi
+  local path=$1
+  # If $2 isn't empty, we probably intended to use autocd to go into a subdir, so let's try that
+  if [ ! -z "$2" ]; then
+    shift
+    newpath="$path $*"
+    newpath=${newpath// /\/}
+    newpath=${newpath#--}
+    newpath=${newpath#\/}
+    if [ -f "$(pwd)/$newpath" ] || [ -d "$(pwd)/$newpath" ]; then
+      path="$newpath"
+    fi
+  fi
+  # If we try to CD to a file, cd to the dir it's in
+  if [ -f "$path" ]; then
+    path=$(dirname "$path")
+  fi
+  # If path has a string containing > 2 dots, then you're an idiot who forgot your aliases, but we'll fix it anyway
+  # shellcheck disable=SC2076
+  if [[ "$path" =~ "..." ]]; then
+    length=${#path}
+    dirs=$((length / 2))
+    unset path
+    for i in $(seq $dirs); do
+      path="${path}../"
+    done
+  fi
+  builtin cd "$path" && ls
+}
+
+# Make extract easier
+function extract() {
+  if [ -f "$1" ]; then
+    case $1 in
+    *.tar.xz) tar -xvf "$1" ;;
+    *.tar.bz2) tar -jxvf "$1" ;;
+    *.tar.gz) tar -zxvf "$1" ;;
+    *.bz2) bunzip2 "$1" ;;
+    *.dmg) hdiutil mount "$1" ;;
+    *.gz) gunzip "$1" ;;
+    *.tar) tar -xvf "$1" ;;
+    *.tbz2) tar -jxvf "$1" ;;
+    *.tgz) tar -zxvf "$1" ;;
+    *.zip) unzip "$1" ;;
+    *.pax) pax -rf "$1" ;;
+    *.pax.z) uncompress "$1" --stdout | pax -r ;;
+    *.rar) 7z x "$1" ;;
+    *.z) uncompress "$1" ;;
+    *.7z) 7z x "$1" ;;
+    *) echo "'$1' cannot be extracted/mounted via extract()" ;;
+    esac
+  else
+    echo "'$1' is not a valid file!"
+  fi
+}
+
+# Remembering bc exists is hard
+function math() { echo "scale=5;" "$@" | bc -l; }
+
+alias ll='ls -lah'                                                        # ls list with hidden files, human readable sizes
+alias cg='cd `git rev-parse --show-toplevel`'                             # Jumps to the top level of a git repo
+alias cd..='cd ..'                                                        # Typo fixes
+alias mkdir='mkdir -pv'                                                   # Makes parent directories as well
+alias df='df -H'                                                          # Makes df human readable by default
+alias rm='rm -I --preserve-root'                                          # Prompt if removing more than 3 files or if recursive, also don't let me delete root
+alias wget='wget -c'                                                      # Allows me to resume wget downloads
+alias path='echo -e ${PATH//:/\\n}'                                       # Pretty-print all entries in $PATH
+alias reset="reset;clear"                                                 # Clean up the screen
+alias lsdir="ls -d */"                                                    # Show only dirs
+alias vpn=xaval                                                           # Poor man's SSH-based VPN (https://github.com/ivanilves/xiringuito)
+alias disable-git-ps1='source $(hash -t export-to-shell) LP_ENABLE_GIT=0' # Sometimes liquidprompt's git prompt lags a lot, this disables it
+alias enable-git-ps1='source $(hash -t export-to-shell) LP_ENABLE_GIT=1'  # Re-enables liquidprompt's git prompt
+alias forget='history -d $((HISTCMD - 1))'                                # Forget the last command
+alias less="less -r"                                                      # Interpret colours with less
+
+###### Interactive Imports ######
+# RESH - enhanced shell
+# shellcheck source=/home/connor/.resh/shellrc
+[ -f "$HOME/.resh/shellrc" ] && . "$HOME/.resh/shellrc"
+# shellcheck source=/home/connor/.bash-preexec.sh
+[ -f "$HOME/.bash-preexec.sh" ] && . "$HOME/.bash-preexec.sh"
+# Quick Command-line File Completion, hit ctrl+f to open a nice file browser
+# TODO: Replace file tab-completion with QFC
+[ -f "$HOME/.qfc/bin/qfc.sh" ] && . "$HOME/.qfc/bin/qfc.sh"
+# Bash bookmarks, 'l', 'g', 's' commands
+[ -f "$HOME/bin/baskmarks.sh" ] && . "$HOME/bin/bashmarks.sh"
+# Liquidprompt, pretty context-aware prompt
+[ -f "$HOME/liquidprompt/liquidprompt" ] && . "$HOME/liquidprompt/liquidprompt"
+# Make stderr red
+[ -f "$HOME/bin/libstderred.so" ] && export LD_PRELOAD="/home/connor/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
+
+###### Source stuff we don't sync to git ######
+[ -f .bash_interactive_secret ] && . .bash_interactive_secret
+
+##### Finally, Neofetch to show system summary #####
+
+#if command -v neofetch >/dev/null; then neofetch; fi
