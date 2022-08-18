@@ -1,0 +1,774 @@
+# Generated this file on 2022-08-18 using this horrible quick code on the docs site: https://liquidprompt.readthedocs.io/en/stable/config.html
+# let f = document.getElementsByClassName("sig sig-object py")
+# out = ""
+# for (let i of f) {
+# 	let varName = i.id
+# 	let defaultVar = i.children[2].innerText.replace("= ", "")
+# 	let description = i.parentElement.children[1].innerText.replace(/\n/g, '\n# ').replace(/\n# \n/g, '\n')
+# 	if (description.toLowerCase().includes("deprecated")) continue
+# 	out += `# ${varName}: ${description}\n# Default: ${defaultVar}\n${varName}=${defaultVar}\n\n`
+# }
+# console.log(out)
+
+LP_DEBUG_TIME=0
+
+# LP_MARK_PREFIX: String added directly before LP_MARK_DEFAULT, after all other parts of the prompt. Can be used to tag the prompt in a way that is less intrusive than LP_PS1_PREFIX, or add a newline before the prompt mark. For example:
+# LP_MARK_PREFIX=$'\n'
+# 
+# Default: " "
+LP_MARK_PREFIX=" "
+
+# LP_PATH_CHARACTER_KEEP: The number of characters to save at the start and possibly the end of a directory name when shortening the path. See LP_PATH_METHOD for details of the specific methods.
+# New in version 2.0.
+# Default: 3
+LP_PATH_CHARACTER_KEEP=3
+
+# LP_PATH_KEEP: The number of directories (counting ‘/’) to display at the beginning of a shortened path.
+# Set to 1, will display only root. Set to 0, will keep nothing from the beginning of the path.
+# LP_ENABLE_SHORTEN_PATH must be enabled to have any effect.
+# See also: LP_PATH_LENGTH and LP_PATH_METHOD.
+# Changed in version 2.0: No longer supports a value of -1.
+# Default: 2
+LP_PATH_KEEP=2
+
+# LP_PATH_LENGTH: The maximum percentage of the terminal width used to display the path before removing the center portion of the path and replacing with LP_MARK_SHORTEN_PATH.
+# LP_ENABLE_SHORTEN_PATH must be enabled to have any effect.
+# Note
+# LP_PATH_KEEP and LP_PATH_METHOD have higher precedence over this option. Important path parts, including directories saved by LP_PATH_KEEP, LP_PATH_VCS_ROOT, and the last directory, will always be displayed, even if the path does not fit in the maximum length.
+# Default: 35
+LP_PATH_LENGTH=35
+
+# LP_PATH_METHOD: Sets the method used for shortening the path display when it exceeds the maximum length set by LP_PATH_LENGTH.
+# truncate_chars_from_path_left: Truncates characters from the start of the path, showing consecutive directories as one shortened section. E.g. in a directory named ~/MyProjects/Liquidprompt/tests, it will be shortened to ...prompt/tests. The shortened mark is LP_MARK_SHORTEN_PATH.
+# truncate_chars_from_dir_right: Leaves the beginning of a directory name untouched. E.g. directories will be shortened like so: ~/Doc.../Office. How many characters will be untouched is set by LP_PATH_CHARACTER_KEEP. The shortened mark is LP_MARK_SHORTEN_PATH.
+# truncate_chars_from_dir_middle: Leaves the beginning and end of a directory name untouched. E.g. in a directory named ~/MyProjects/Office, then it will be shortened to ~/MyS...cts/Office. How many characters will be untouched is set by LP_PATH_CHARACTER_KEEP. The shortened mark is LP_MARK_SHORTEN_PATH.
+# truncate_chars_to_unique_dir: Truncate each directory to the shortest unique starting portion of their name. E.g. in a folder ~/dev/liquidprompt, it will be shortened to ~/d/liquidprompt if there is no other directory starting with ‘d’ in the home directory.
+# truncate_to_last_dir: Only display the last directory in the path. In other words, the current directory name.
+# All methods (other than ‘truncate_to_last_dir’) start at the far left of the path (limited by LP_PATH_KEEP). Only the minimum number of directories needed to fit inside LP_PATH_LENGTH will be shortened.
+# LP_ENABLE_SHORTEN_PATH must be enabled to have any effect.
+# New in version 2.0.
+# Default: "truncate_chars_from_path_left"
+LP_PATH_METHOD="truncate_chars_from_path_left"
+
+# LP_PATH_VCS_ROOT: Display the root directory of the current VCS repository with special formatting, set by LP_COLOR_PATH_VCS_ROOT. If LP_ENABLE_SHORTEN_PATH is enabled, also prevent the path shortening from shortening or hiding the VCS root directory.
+# New in version 2.0.
+# Default: 1
+LP_PATH_VCS_ROOT=1
+
+# LP_PS1_POSTFIX: A string displayed at the very end of the prompt, after even the prompt mark. LP_MARK_PREFIX is an alternative that goes before the prompt mark.
+# Default: ""
+LP_PS1_POSTFIX=""
+
+# LP_PS1_PREFIX: A string displayed at the start of the prompt. Can also be set with prompt_tag().
+# Default: ""
+LP_PS1_PREFIX=""
+
+# LP_TIME_FORMAT: The formatting string passed to date(1) using formatting from strftime(3) used to display the current date and/or time.
+# See also: LP_ENABLE_TIME.
+# New in version 2.1.
+# Default: "%H:%M:%S"
+LP_TIME_FORMAT="%H:%M:%S"
+
+# LP_DELIMITER_KUBECONTEXT_PREFIX: Delimiter to shorten the Kubernetes context by removing a prefix.
+# Usage example:
+# if your context names are cluster-dev and cluster-test, then set this to “-” in order to output “dev” and “test” in prompt.
+# if using AWS EKS then set this to ‘/’ to show only the cluster name, without the rest of the ARN (arn:aws:eks:$AWS_REGION:$ACCOUNT_ID:cluster/$CLUSTER_NAME)
+# alternatively, if using AWS EKS, set this to ‘:’ to show only “cluster/$CLUSTER_NAME”. (Note: the prefix removed is a greedy match - it contains all the “:”s in the input.)
+# If set to the empty string no truncating will occur (this is the default).
+# See also: LP_ENABLE_KUBECONTEXT, LP_DELIMITER_KUBECONTEXT_SUFFIX, LP_COLOR_KUBECONTEXT, and LP_MARK_KUBECONTEXT.
+# New in version 2.1.
+# Default: ""
+LP_DELIMITER_KUBECONTEXT_PREFIX=""
+
+# LP_DELIMITER_KUBECONTEXT_SUFFIX: Delimiter to shorten the Kubernetes context by removing a suffix.
+# Usage example:
+# if your context names are dev-cluster and test-cluster, then set this to “-” in order to output “dev” and “test” in prompt.
+# if your context names are dev.k8s.example.com and test.k8s.example.com, then set this to “.” in order to output “dev” and “test” in prompt. (Note: the suffix removed is a greedy match - it contains all the “.”s in the input.)
+# if using OpenShift then set this to “/” to show only the project name without the cluster and user parts.
+# If set to the empty string no truncating will occur (this is the default).
+# See also: LP_ENABLE_KUBECONTEXT, LP_DELIMITER_KUBECONTEXT_PREFIX, LP_COLOR_KUBECONTEXT, and LP_MARK_KUBECONTEXT.
+# New in version 2.1.
+# Default: ""
+LP_DELIMITER_KUBECONTEXT_SUFFIX=""
+
+# LP_DISABLED_VCS_PATHS: An array of absolute directory paths where VCS features will be disabled. Generally this would be used for repositories that are large and slow, where generating VCS information for the prompt would impact prompt responsiveness.
+# Any subdirectory under the input directory is also disabled, so setting “/repos” would disable VCS display when the current directory is “/repos/a-repo”. Setting ("/") would disable VCS display completely.
+# An example value would be:
+# LP_DISABLED_VCS_PATHS=("/a/svn/repo" "/home/me/my/large/repo")
+# 
+# See also: LP_MARK_DISABLED.
+# New in version 2.0.
+# Default: ()
+LP_DISABLED_VCS_PATHS=()
+
+# LP_ENABLE_AWS_PROFILE: Display the current value of AWS_PROFILE, AWS_DEFAULT_PROFILE, or AWS_VAULT. AWS_PROFILE and AWS_DEFAULT_PROFILE are used to switch between configuration profiles by the AWS CLI. AWS_VAULT is used by aws-vault to specify the AWS profile in use.
+# See also: LP_COLOR_AWS_PROFILE.
+# New in version 2.1.
+# Default: 1
+LP_ENABLE_AWS_PROFILE=1
+
+# LP_ENABLE_BATT: Display the status of the battery, if there is one, using color and marks. Add battery percentage colored with LP_COLORMAP if LP_PERCENTS_ALWAYS is enabled.
+# Will be disabled if acpi is not found on Linux, fails to read the Linux sysfs system, or pmset is not found on MacOS.
+# See also: LP_BATTERY_THRESHOLD, LP_MARK_BATTERY, LP_MARK_ADAPTER, LP_COLOR_CHARGING_ABOVE, LP_COLOR_CHARGING_UNDER, LP_COLOR_DISCHARGING_ABOVE, and LP_COLOR_DISCHARGING_UNDER.
+# Default: 1
+LP_ENABLE_BATT=0
+
+# LP_ENABLE_BZR: Display VCS information inside Bazaar repositories.
+# Will be disabled if bzr is not found.
+# See also: LP_MARK_BZR.
+# Default: 1
+LP_ENABLE_BZR=0
+
+# LP_ENABLE_COLOR: Use terminal formatting when displaying the prompt.
+# Note
+# Not all formatting is correctly disabled if this option is disabled.
+# Will be disabled if tput is not found.
+# New in version 2.0.
+# Default: 1
+LP_ENABLE_COLOR=1
+
+# LP_ENABLE_CONTAINER: Indicate if the shell is running in a container environment (e.g. Docker, Podman, LXC, Singularity, systemd-nspawn).
+# Note
+# Containers may inherit some or even no variables from their parent shell, so this may behave inconsisently with different container software. For example, Docker doesn’t inherit anything unless explicitly told to. Singularity in many configurations inherits most variables but shell functions and zsh hooks might not make it in. For full functionality, liquidprompt may need to be sourced inside the child container.
+# See also: LP_COLOR_CONTAINER.
+# New in version 2.1.
+# Default: 0
+LP_ENABLE_CONTAINER=1
+
+# LP_ENABLE_DETACHED_SESSIONS: Display the number of detached multiplexer sessions.
+# Will be disabled if neither screen nor tmux are found.
+# Note
+# This can be slow on some machines, and prompt speed can be greatly improved by disabling it.
+# See also: LP_COLOR_JOB_D.
+# New in version 2.0.
+# Default: 1
+LP_ENABLE_DETACHED_SESSIONS=1
+
+# LP_ENABLE_DIRSTACK: Display the size of the directory stack if it is greater than 1.
+# See also: LP_MARK_DIRSTACK and LP_COLOR_DIRSTACK.
+# New in version 2.0.
+# Default: 0
+LP_ENABLE_DIRSTACK=0
+
+# LP_ENABLE_ERROR: Display the last command error code if it is not 0.
+# See also: LP_COLOR_ERR.
+# New in version 2.0.
+# Default: 1
+LP_ENABLE_ERROR=1
+
+# LP_ENABLE_FOSSIL: Display VCS information inside Fossil repositories.
+# Will be disabled if fossil is not found.
+# See also: LP_MARK_FOSSIL.
+# Default: 1
+LP_ENABLE_FOSSIL=0
+
+# LP_ENABLE_GIT: Display VCS information inside Git repositories.
+# Will be disabled if git is not found.
+# See also: LP_MARK_GIT.
+# Default: 1
+LP_ENABLE_GIT=1
+
+# LP_ENABLE_HG: Display VCS information inside Mercurial repositories.
+# Will be disabled if hg is not found.
+# See also: LP_MARK_HG and LP_HG_COMMAND.
+# Default: 1
+LP_ENABLE_HG=0
+
+# LP_ENABLE_JOBS: Display the number of running and sleeping shell jobs.
+# See also: LP_COLOR_JOB_R and LP_COLOR_JOB_Z.
+# Default: 1
+LP_ENABLE_JOBS=1
+
+# LP_ENABLE_KUBECONTEXT: Display the current Kubernetes context.
+# See also: LP_ENABLE_KUBE_NAMESPACE, LP_DELIMITER_KUBECONTEXT_PREFIX, LP_DELIMITER_KUBECONTEXT_SUFFIX, LP_COLOR_KUBECONTEXT, and LP_MARK_KUBECONTEXT.
+# New in version 2.1.
+# Default: 0
+LP_ENABLE_KUBECONTEXT=0
+
+# LP_ENABLE_KUBE_NAMESPACE: Display the current Kubernetes default namespace in the current context.
+# See also: LP_ENABLE_KUBECONTEXT, LP_DELIMITER_KUBECONTEXT_PREFIX, LP_DELIMITER_KUBECONTEXT_SUFFIX, LP_COLOR_KUBECONTEXT, and LP_MARK_KUBECONTEXT.
+# New in version 2.1.
+# Default: 0
+LP_ENABLE_KUBE_NAMESPACE=0
+
+# LP_ENABLE_LOAD: Display the load average over the past 1 minutes when above the threshold.
+# See also: LP_LOAD_THRESHOLD, LP_LOAD_CAP, LP_MARK_LOAD, LP_PERCENTS_ALWAYS, and LP_COLORMAP.
+# Default: 1
+LP_ENABLE_LOAD=1
+
+# LP_ENABLE_NODE_VENV: Display the currently activated nodeenv or NVM virtual environment.
+# See also: LP_COLOR_NODE_VENV.
+# New in version 2.1.
+# Default: 0
+LP_ENABLE_NODE_VENV=0
+
+# LP_ENABLE_PERM: Display a colored LP_MARK_PERM in the prompt to show when the user does not have write permission to the current directory.
+# See also: LP_COLOR_WRITE and LP_COLOR_NOWRITE.
+# Default: 1
+LP_ENABLE_PERM=1
+
+# LP_ENABLE_PROXY: Display a LP_MARK_PROXY mark when an HTTP proxy is detected.
+# See also: LP_COLOR_PROXY.
+# Default: 1
+LP_ENABLE_PROXY=1
+
+# LP_ENABLE_RUBY_VENV: Display the currently activated RVM or RBENV virtual environment.
+# See also: LP_RUBY_RVM_PROMPT_OPTIONS and LP_COLOR_RUBY_VENV.
+# New in version 2.1.
+# Default: 1
+LP_ENABLE_RUBY_VENV=0
+
+# LP_ENABLE_RUNTIME: Display runtime of the previous command if over LP_RUNTIME_THRESHOLD.
+# See also: LP_COLOR_RUNTIME.
+# Default: 1
+LP_ENABLE_RUNTIME=1
+
+# LP_ENABLE_RUNTIME_BELL: Ring the terminal bell if the previous command ran longer than LP_RUNTIME_BELL_THRESHOLD.
+# New in version 1.12.
+# Default: 0
+LP_ENABLE_RUNTIME_BELL=0
+
+# LP_ENABLE_SCLS: Display the currently activated Red Hat Software Collection.
+# See also: LP_COLOR_VIRTUALENV.
+# Default: 1
+LP_ENABLE_SCLS=0
+
+# LP_ENABLE_SCREEN_TITLE: Set the terminal title while in a terminal multiplexer.
+# LP_ENABLE_TITLE must be enabled to have any effect.
+# Default: 0
+LP_ENABLE_SCREEN_TITLE=0
+
+# LP_ENABLE_SHLVL: Show the value of $SHLVL, which is the number of nested shells. For example, if one runs bash inside their shell, it will open a new shell inside their current shell, and this will display “2”.
+# See also: LP_MARK_SHLVL and LP_COLOR_SHLVL.
+# New in version 2.1.
+# Default: 1
+LP_ENABLE_SHLVL=1
+
+# LP_ENABLE_SHORTEN_PATH: Use the shorten path feature if the path is too long to fit in the prompt line.
+# See also: LP_PATH_METHOD, LP_PATH_LENGTH, LP_PATH_KEEP, LP_PATH_CHARACTER_KEEP, and LP_MARK_SHORTEN_PATH.
+# Default: 1
+LP_ENABLE_SHORTEN_PATH=1
+
+# LP_ENABLE_SSH_COLORS: Replace LP_COLOR_SSH with a color based on the hash of the hostname. This can give each host a “color feel” to help distinguish them.
+# See also: LP_HOSTNAME_ALWAYS.
+# Default: 0
+LP_ENABLE_SSH_COLORS=1
+
+# LP_ENABLE_SUDO: Check if the user has valid sudo credentials, and display an indicating mark or color.
+# Will be disabled if sudo is not found.
+# Warning
+# Each evocation of sudo by default writes to the syslog, and this will run sudo once each prompt, unless you have NOPASSWD powers. This is likely to make your sysadmin hate you.
+# See also: LP_COLOR_MARK_SUDO.
+# Default: 0
+LP_ENABLE_SUDO=1
+
+# LP_ENABLE_SVN: Display VCS information inside Subversion repositories.
+# Will be disabled if svn is not found.
+# See also: LP_MARK_SVN.
+# Default: 1
+LP_ENABLE_SVN=0
+
+# LP_ENABLE_TEMP: Display the highest system temperature if above the threshold.
+# Will be disabled if neither sensors nor acpi are found, or fails to read from the Linux sysfs system.
+# See also: LP_TEMP_THRESHOLD, LP_MARK_TEMP, and LP_COLORMAP.
+# Default: 1
+LP_ENABLE_TEMP=0
+
+# LP_ENABLE_TERRAFORM: Display the currently activated Terraform workspace.
+# See also: LP_COLOR_TERRAFORM.
+# New in version 2.1.
+# Default: 0
+LP_ENABLE_TERRAFORM=0
+
+# LP_ENABLE_TIME: Displays the time at which the prompt was shown. The format can be configured with LP_TIME_FORMAT.
+# See also: LP_TIME_ANALOG and LP_COLOR_TIME.
+# Default: 0
+LP_ENABLE_TIME=1
+
+# LP_ENABLE_TITLE: Set the terminal title to part or all of the prompt string, depending on the theme.
+# Must be enabled to be able to set the manual title with lp_title().
+# Warning
+# This may not work properly on exotic terminals. Please report any issues.
+# Default: 0
+LP_ENABLE_TITLE=1
+
+# LP_ENABLE_TITLE_COMMAND: Postpend the currently running command to the terminal title while the command is running.
+# LP_ENABLE_TITLE must be enabled to have any effect.
+# New in version 2.1.
+# Default: 1
+LP_ENABLE_TITLE_COMMAND=1
+
+# LP_ENABLE_VCS_ROOT: Enable VCS features when running as root. This is disabled by default for security.
+# Default: 0
+LP_ENABLE_VCS_ROOT=0
+
+# LP_ENABLE_VIRTUALENV: Display the currently activated Python or Conda virtual environment.
+# See also: LP_COLOR_VIRTUALENV.
+# Default: 1
+LP_ENABLE_VIRTUALENV=0
+
+# LP_ENABLE_WIFI_STRENGTH: Display an indicator if any wireless signal strength percentage is below LP_WIFI_STRENGTH_THRESHOLD. Also show the strength percentage if LP_PERCENTS_ALWAYS is enabled.
+# Both Linux and MacOS are supported.
+# See also: LP_MARK_WIFI and LP_COLORMAP.
+# New in version 2.1.
+# Default: 0
+LP_ENABLE_WIFI_STRENGTH=0
+
+# LP_HG_COMMAND: The command to use for Mercurial commands. Can be used to replace hg with rhg or chg.
+# See also: LP_ENABLE_HG and LP_MARK_HG.
+# New in version 2.1.
+# Default: "hg"
+LP_HG_COMMAND="hg"
+
+# LP_HOSTNAME_ALWAYS: Determine when the hostname should be displayed. Valid values are:
+# 0 - show the hostname, except when locally connected
+# 1 - always show the hostname
+# -1 - never show the hostname
+# See also: LP_COLOR_HOST and LP_ENABLE_SSH_COLORS.
+# Default: 0
+LP_HOSTNAME_ALWAYS=1
+
+# LP_HOSTNAME_METHOD: Determine the method for displaying the hostname.
+# short: show the first section of the hostname, what is before the first dot. Equal to \h in Bash or %m in Zsh.
+# full: show the full hostname, without any domain name. Equal to \H in Bash or %M in Zsh.
+# fqdn: show the fully qualified domain name, if it exists. Defaults to full if not.
+# pretty: show the pretty hostname, also called “machine display name”. Defaults to full if one does not exist.
+# See also: LP_HOSTNAME_ALWAYS.
+# New in version 2.1.
+# Default: "short"
+LP_HOSTNAME_METHOD="short"
+
+# LP_PERCENTS_ALWAYS: Display the actual values of load, batteries, and wifi signal strength along with their corresponding marks. Disable to only print the colored marks.
+# See also: LP_ENABLE_LOAD, LP_ENABLE_BATT, LP_ENABLE_WIFI_STRENGTH.
+# Default: 1
+LP_PERCENTS_ALWAYS=1
+
+# LP_RUBY_RVM_PROMPT_OPTIONS: An array of single letter switches to customize the RVM prompt output.
+# Will only have an effect if LP_ENABLE_RUBY_VENV is enabled and you are using RVM (i.e. no effect with RBENV).
+# New in version 2.1.
+# Default: (i v g s)
+LP_RUBY_RVM_PROMPT_OPTIONS=(i v g s)
+
+# LP_TIME_ANALOG: Shows the time using an analog clock instead of numeric values. The analog clock is “accurate” to the nearest half hour. You must have a unicode-capable terminal and a font with the “CLOCK” characters (U+1F550 - U+1F567).
+# Will only have an effect if LP_ENABLE_TIME is enabled.
+# Default: 0
+LP_TIME_ANALOG=0
+
+# LP_USER_ALWAYS: Determine when the username should be displayed. Valid values are:
+# 0 - show the username, except when the user is the login user
+# 1 - always show the username
+# -1 - never show the username
+# See also: LP_COLOR_USER_LOGGED, LP_COLOR_USER_ALT, and LP_COLOR_USER_ROOT.
+# Changed in version 2.0: The -1 option was added.
+# Default: 1
+LP_USER_ALWAYS=1
+
+# LP_BATTERY_THRESHOLD: The percentage threshold that the battery level needs to fall below before it will be displayed in LP_COLOR_CHARGING_UNDER or LP_COLOR_DISCHARGING_UNDER color. Otherwise, it will be displayed in LP_COLOR_CHARGING_ABOVE or LP_COLOR_DISCHARGING_ABOVE color.
+# LP_ENABLE_BATT must be enabled to have any effect.
+# Default: 75
+LP_BATTERY_THRESHOLD=75
+
+# LP_LOAD_CAP: The value for load average per CPU to display with the max color scaling. Values above this number will still be displayed, but the colors will not increase in intensity.
+# LP_ENABLE_LOAD must be enabled to have any effect.
+# See also: LP_COLORMAP.
+# New in version 2.0.
+# Default: 2.0
+LP_LOAD_CAP=10.0
+
+# LP_RUNTIME_THRESHOLD: Time in seconds that a command must run longer than for its runtime to be displayed.
+# LP_ENABLE_RUNTIME must be enabled to have any effect.
+# Default: 2
+LP_RUNTIME_THRESHOLD=2
+
+# LP_RUNTIME_BELL_THRESHOLD: Time in seconds that a command must run longer than for the terminal bell to be rung.
+# LP_ENABLE_RUNTIME_BELL must be enabled to have any effect.
+# New in version 1.12.
+# Default: 10
+LP_RUNTIME_BELL_THRESHOLD=10
+
+# LP_TEMP_THRESHOLD: Display the highest system temperature when the temperature is above this threshold (in degrees Celsius).
+# LP_ENABLE_TEMP must be enabled to have any effect.
+# Default: 60
+LP_TEMP_THRESHOLD=60
+
+# LP_WIFI_STRENGTH_THRESHOLD: Display the lowest wireless signal strength when the strength percentage is below this threshold.
+# LP_ENABLE_WIFI_STRENGTH must be enabled to have any effect.
+# New in version 2.1.
+# Default: 40
+LP_WIFI_STRENGTH_THRESHOLD=40
+
+# LP_MARK_ADAPTER: Mark used for battery display when charging.
+# See also: LP_ENABLE_BATT.
+# Default: "⏚"
+LP_MARK_ADAPTER="⏚"
+
+# LP_MARK_BATTERY: Mark used for battery display when on battery power.
+# See also: LP_ENABLE_BATT.
+# Default: "⌁"
+LP_MARK_BATTERY="⌁"
+
+# LP_MARK_BRACKET_CLOSE: Mark used for closing core prompt brackets. Used by the default theme for enclosing user, host, and current working directory sections.
+# See also: LP_MARK_BRACKET_OPEN, LP_MARK_MULTIPLEXER_CLOSE.
+# Default: "]"
+LP_MARK_BRACKET_CLOSE="]"
+
+# LP_MARK_BRACKET_OPEN: Mark used for opening core prompt brackets. Used by the default theme for enclosing user, host, and current working directory sections.
+# See also: LP_MARK_BRACKET_CLOSE, LP_MARK_MULTIPLEXER_OPEN.
+# Default: "["
+LP_MARK_BRACKET_OPEN="["
+
+# LP_MARK_BZR: Mark used instead of LP_MARK_DEFAULT to indicate that the current directory is inside of a Bazaar repository.
+# See also: LP_ENABLE_BZR.
+# Default: "⚯"
+LP_MARK_BZR="⚯"
+
+# LP_MARK_DEFAULT: Mark used to indicate that the prompt is ready for user input, unless some other context overrides it, like a VCS repository.
+# Default: "$" (Bash) or "%" (Zsh)
+LP_MARK_DEFAULT="$"
+
+# LP_MARK_DIRSTACK: Mark used to indicate the size of the directory stack. Here are some alternative marks you might like: ⚟ = ≡ ≣
+# See also: LP_ENABLE_DIRSTACK and LP_COLOR_DIRSTACK.
+# New in version 2.0.
+# Default: "⚞"
+LP_MARK_DIRSTACK="⚞"
+
+# LP_MARK_DISABLED: Mark used instead of LP_MARK_DEFAULT to indicate that the current directory is disabled for VCS display through LP_DISABLED_VCS_PATHS.
+# Default: "⌀"
+LP_MARK_DISABLED="⌀"
+
+# LP_MARK_FOSSIL: Mark used instead of LP_MARK_DEFAULT to indicate that the current directory is inside of a Fossil repository.
+# See also: LP_ENABLE_FOSSIL.
+# Default: "⌘"
+LP_MARK_FOSSIL="⌘"
+
+# LP_MARK_GIT: Mark used instead of LP_MARK_DEFAULT to indicate that the current directory is inside of a Git repository.
+# See also: LP_ENABLE_GIT.
+# Default: "±"
+LP_MARK_GIT="±"
+
+# LP_MARK_HG: Mark used instead of LP_MARK_DEFAULT to indicate that the current directory is inside of a Mercurial repository.
+# See also: LP_ENABLE_HG and LP_HG_COMMAND.
+# Default: "☿"
+LP_MARK_HG="☿"
+
+# LP_MARK_KUBECONTEXT: Mark used to prefix the current Kubernetes context.
+# Used to visually distinguish the Kubernetes context from other context fields like the Python virtual environment (see LP_ENABLE_VIRTUALENV) and the Red Hat Software Collection (see LP_ENABLE_SCLS).
+# The display of Unicode characters varies among Terminal and Font settings, so you might try alternative marks. Single symbol alternatives to the default “⎈” (U+2388, Helm Symbol) are “☸” (U+2638, Wheel of Dharma) or “κ” (U+03BA, Greek Small Letter Kappa).
+# See also: LP_ENABLE_KUBECONTEXT.
+# New in version 2.1.
+# Default: "⎈"
+LP_MARK_KUBECONTEXT="⎈"
+
+# LP_MARK_LOAD: Mark used before displaying load average.
+# See also: LP_ENABLE_LOAD.
+# Default: "⌂"
+LP_MARK_LOAD="⌂"
+
+# LP_MARK_MULTIPLEXER_CLOSE: Mark used for closing core prompt brackets. Used by the default theme when inside of a multiplexer.
+# See also: LP_MARK_MULTIPLEXER_OPEN, LP_MARK_BRACKET_CLOSE.
+# New in version 2.1.
+# Default: $LP_MARK_BRACKET_CLOSE
+LP_MARK_MULTIPLEXER_CLOSE=$LP_MARK_BRACKET_CLOSE
+
+# LP_MARK_MULTIPLEXER_OPEN: Mark used for opening core prompt brackets. Used by the default theme when inside of a multiplexer.
+# See also: LP_MARK_MULTIPLEXER_CLOSE, LP_MARK_BRACKET_OPEN.
+# New in version 2.1.
+# Default: $LP_MARK_BRACKET_OPEN
+LP_MARK_MULTIPLEXER_OPEN=$LP_MARK_BRACKET_OPEN
+
+# LP_MARK_PERM: Mark used by default separate hostname and current working directory, and is colored to indicate user permissions on the current directory.
+# Is still used (without colors) if LP_ENABLE_PERM is disabled.
+# New in version 1.12.
+# Default: ":"
+LP_MARK_PERM=":"
+
+# LP_MARK_PROXY: Mark used to indicate a proxy is active.
+# See also: LP_ENABLE_PROXY.
+# Default: "↥"
+LP_MARK_PROXY="↥"
+
+# LP_MARK_SHLVL: Mark used to indicate the shell is inside another shell.
+# See also: LP_ENABLE_SHLVL and LP_COLOR_SHLVL.
+# New in version 2.1.
+# Default: "└"
+LP_MARK_SHLVL="└"
+
+# LP_MARK_SHORTEN_PATH: Mark used to indicate a portion of the path was hidden to save space. Not all shortening methods use this mark, some only use LP_COLOR_PATH_SHORTENED.
+# See also: LP_ENABLE_SHORTEN_PATH, LP_PATH_METHOD.
+# Default: " … "
+LP_MARK_SHORTEN_PATH=" … "
+
+# LP_MARK_STASH: Mark used to indicate at least one stash or shelve exists in the current repository.
+# Default: "+"
+LP_MARK_STASH="+"
+
+# LP_MARK_SVN: Mark used instead of LP_MARK_DEFAULT to indicate that the current directory is inside of a Subversion repository.
+# See also: LP_ENABLE_SVN.
+# Default: "‡"
+LP_MARK_SVN="‡"
+
+# LP_MARK_TEMP: Mark used before displaying temperature.
+# See also: LP_ENABLE_TEMP.
+# Default: "θ"
+LP_MARK_TEMP="θ"
+
+# LP_MARK_UNTRACKED: Mark used to indicate untracked or extra files exist in the current repository.
+# Default: "*"
+LP_MARK_UNTRACKED="*"
+
+# LP_MARK_VCSH: Mark used instead of LP_MARK_DEFAULT to indicate that the current directory is inside of a VCSH repository.
+# Since VCSH repositories are Git repositories under the hood, LP_MARK_GIT is surrounded in this mark.
+# Default: "|"
+LP_MARK_VCSH="|"
+
+# LP_MARK_WIFI: Mark used before displaying wireless signal strength.
+# See also: LP_ENABLE_WIFI_STRENGTH.
+# New in version 2.1.
+# Default: "📶"
+LP_MARK_WIFI="📶"
+
+# LP_COLORMAP: An array of colors that is used by the battery, load, temperature, and wireless signal strength features to indicate the severity level of their status. A normal or low status will use the first index, while the last index is the most severe.
+# The default array is:
+# (
+#     ""
+#     $GREEN
+#     $BOLD_GREEN
+#     $YELLOW
+#     $BOLD_YELLOW
+#     $RED
+#     $BOLD_RED
+#     $WARN_RED
+#     $CRIT_RED
+#     $DANGER_RED
+# )
+# 
+# See also: LP_ENABLE_BATT, LP_ENABLE_LOAD, LP_ENABLE_TEMP, and LP_ENABLE_WIFI_STRENGTH.
+# Default: 
+LP_COLORMAP=("" $GREEN $BOLD_GREEN $YELLOW $BOLD_YELLOW $RED $BOLD_RED $WARN_RED $CRIT_RED $DANGER_RED)
+
+# LP_COLOR_AWS_PROFILE: Color used to display the current active AWS Profile.
+# See also: LP_ENABLE_AWS_PROFILE.
+# New in version 2.1.
+# Default: $YELLOW
+LP_COLOR_AWS_PROFILE=$YELLOW
+
+# LP_COLOR_CHANGES: Color used to indicate that the current repository is not clean, or in other words, has changes that have not been committed.
+# Default: $RED
+LP_COLOR_CHANGES=$RED
+
+# LP_COLOR_CHARGING_ABOVE: Color used to indicate that the battery is charging and above the LP_BATTERY_THRESHOLD.
+# See also: LP_ENABLE_BATT.
+# Default: $GREEN
+LP_COLOR_CHARGING_ABOVE=$GREEN
+
+# LP_COLOR_CHARGING_UNDER: Color used to indicate that the battery is charging and under the LP_BATTERY_THRESHOLD.
+# See also: LP_ENABLE_BATT.
+# Default: $YELLOW
+LP_COLOR_CHARGING_UNDER=$YELLOW
+
+# LP_COLOR_COMMITS_BEHIND: Color used to indicate that the current repository has a remote tracking branch that has commits that the local branch does not.
+# Default: $BOLD_RED
+LP_COLOR_COMMITS_BEHIND=$BOLD_RED
+
+# LP_COLOR_COMMITS: Color used to indicate that the current repository has commits on the local branch that the remote tracking branch does not.
+# Also used to color LP_MARK_STASH.
+# Default: $YELLOW
+LP_COLOR_COMMITS=$YELLOW
+
+# LP_COLOR_CONTAINER: Color used to indicate that the current shell is running in a container
+# New in version 2.1.
+# Default: $BOLD_BLUE
+LP_COLOR_CONTAINER=$BOLD_BLUE
+
+# LP_COLOR_DIFF: Color used to indicate that the current repository has lines that have been changed since the last commit.
+# Default: $PURPLE
+LP_COLOR_DIFF=$PURPLE
+
+# LP_COLOR_DIRSTACK: Color used to indicate the size of the directory stack.
+# See also: LP_ENABLE_DIRSTACK and LP_MARK_DIRSTACK.
+# New in version 2.0.
+# Default: $BOLD_YELLOW
+LP_COLOR_DIRSTACK=$BOLD_YELLOW
+
+# LP_COLOR_DISCHARGING_ABOVE: Color used to indicate that the battery is discharging and above the LP_BATTERY_THRESHOLD.
+# See also: LP_ENABLE_BATT.
+# Default: $YELLOW
+LP_COLOR_DISCHARGING_ABOVE=$YELLOW
+
+# LP_COLOR_DISCHARGING_UNDER: Color used to indicate that the battery is discharging and above the LP_BATTERY_THRESHOLD.
+# See also: LP_ENABLE_BATT.
+# Default: $RED
+LP_COLOR_DISCHARGING_UNDER=$RED
+
+# LP_COLOR_ERR: Color used to indicate the last command exited with a non-zero return code.
+# See also: LP_ENABLE_ERROR.
+# Default: $PURPLE
+LP_COLOR_ERR=$PURPLE
+
+# LP_COLOR_HOST: Color used for the hostname when connected locally.
+# See also: LP_HOSTNAME_ALWAYS.
+# Default: ""
+LP_COLOR_HOST=""
+
+# LP_COLOR_IN_MULTIPLEXER: Color used for LP_MARK_MULTIPLEXER_OPEN and LP_MARK_MULTIPLEXER_CLOSE if the terminal is in a multiplexer.
+# Default: $BOLD_BLUE
+LP_COLOR_IN_MULTIPLEXER=$BOLD_BLUE
+
+# LP_COLOR_JOB_D: Color used for detached multiplexer sessions.
+# See also: LP_ENABLE_DETACHED_SESSIONS.
+# Default: $YELLOW
+LP_COLOR_JOB_D=$YELLOW
+
+# LP_COLOR_JOB_R: Color used for running shell jobs.
+# See also: LP_ENABLE_JOBS.
+# Default: $BOLD_YELLOW
+LP_COLOR_JOB_R=$BOLD_YELLOW
+
+# LP_COLOR_JOB_Z: Color used for sleeping shell jobs.
+# See also: LP_ENABLE_JOBS.
+# Default: $BOLD_YELLOW
+LP_COLOR_JOB_Z=$BOLD_YELLOW
+
+# LP_COLOR_KUBECONTEXT: Color used for the current Kubernetes context.
+# See also: LP_ENABLE_KUBECONTEXT.
+# New in version 2.1.
+# Default: $CYAN
+LP_COLOR_KUBECONTEXT=$CYAN
+
+# LP_COLOR_MARK: Color used for LP_MARK_DEFAULT.
+# Default: $BOLD
+LP_COLOR_MARK=$BOLD
+
+# LP_COLOR_MARK_ROOT: Color used for LP_MARK_DEFAULT when the current user is root, shown instead of LP_COLOR_MARK.
+# Default: $BOLD_RED
+LP_COLOR_MARK_ROOT=$BOLD_RED
+
+# LP_COLOR_MARK_SUDO: Color used for LP_MARK_DEFAULT when sudo is active, shown instead of LP_COLOR_MARK.
+# See also: LP_ENABLE_SUDO.
+# Default: $LP_COLOR_MARK_ROOT
+LP_COLOR_MARK_SUDO=$LP_COLOR_MARK_ROOT
+
+# LP_COLOR_NODE_VENV: Color used for displaying a Node.js virtual env.
+# See also: LP_ENABLE_NODE_VENV.
+# New in version 2.1.
+# Default: $LP_COLOR_VIRTUALENV
+LP_COLOR_NODE_VENV=$LP_COLOR_VIRTUALENV
+
+# LP_COLOR_NOWRITE: Color used for LP_MARK_PERM when the user does not have write permissions to the current working directory.
+# See also: LP_ENABLE_PERM and LP_COLOR_WRITE.
+# Default: $RED
+LP_COLOR_NOWRITE=$RED
+
+# LP_COLOR_PATH: Color used for the current working directory.
+# If LP_COLOR_PATH_LAST_DIR, LP_COLOR_PATH_VCS_ROOT, LP_COLOR_PATH_SEPARATOR, or LP_COLOR_PATH_SHORTENED are set, their respective sections will be colored with them instead.
+# Changed in version 2.0: Default value changed from $BOLD to the default color.
+# Default: ""
+LP_COLOR_PATH=""
+
+# LP_COLOR_PATH_LAST_DIR: Color used for the last path segment, which corresponds to the current directory basename.
+# New in version 2.0.
+# Default: $BOLD
+LP_COLOR_PATH_LAST_DIR=$BOLD
+
+# LP_COLOR_PATH_ROOT: Color used in place of LP_COLOR_PATH when the current user is root.
+# Default: $BOLD_YELLOW
+LP_COLOR_PATH_ROOT=$BOLD_YELLOW
+
+# LP_COLOR_PATH_SEPARATOR: Color used for the separator (‘/’) between path segments. If set to the empty string, the separator will take the format of the path segment before it.
+# Default: lp_terminal_format 8 -1 0 0 -1  # Grey
+#LP_COLOR_PATH_SEPARATOR=lp_terminal_format 8 -1 0 0 -1 # Grey
+
+# LP_COLOR_PATH_SHORTENED: Color used for path segments that have been shortened.
+# LP_ENABLE_SHORTEN_PATH must be enabled to have any effect.
+# Default: lp_terminal_format 8 -1 0 0 -1  # Grey
+#LP_COLOR_PATH_SHORTENED=lp_terminal_format 8 -1 0 0 -1 # Grey
+
+# LP_COLOR_PATH_VCS_ROOT: Color used for the path segment corresponding to the current VCS repository root directory.
+# LP_PATH_VCS_ROOT must be enabled to have any effect.
+# New in version 2.0.
+# Default: $BOLD
+LP_COLOR_PATH_VCS_ROOT=$BOLD
+
+# LP_COLOR_PROXY: Color used for LP_MARK_PROXY.
+# See also: LP_ENABLE_PROXY.
+# Default: $BOLD_BLUE
+LP_COLOR_PROXY=$BOLD_BLUE
+
+# LP_COLOR_RUBY_VENV: Color used for displaying a Ruby virtual env.
+# See also: LP_ENABLE_RUBY_VENV.
+# New in version 2.1.
+# Default: $LP_COLOR_VIRTUALENV
+LP_COLOR_RUBY_VENV=$LP_COLOR_VIRTUALENV
+
+# LP_COLOR_RUNTIME: Color used for displaying the last command runtime.
+# See also: LP_ENABLE_RUNTIME.
+# Default: $YELLOW
+LP_COLOR_RUNTIME=$YELLOW
+
+# LP_COLOR_SHLVL: Color used for displaying the nested shell level.
+# See also: LP_ENABLE_SHLVL and LP_MARK_SHLVL.
+# New in version 2.1.
+# Default: $BOLD_GREEN
+LP_COLOR_SHLVL=$BOLD_GREEN
+
+# LP_COLOR_SSH: Color used for displaying the hostname when connected with SSH.
+# Has no effect if LP_ENABLE_SSH_COLORS is enabled.
+# See also: LP_HOSTNAME_ALWAYS.
+# Default: $BLUE
+LP_COLOR_SSH=$BLUE
+
+# LP_COLOR_SU: Color used for displaying the hostname when running under su or sudo.
+# See also: LP_HOSTNAME_ALWAYS.
+# Default: $BOLD_YELLOW
+LP_COLOR_SU=$BOLD_YELLOW
+
+# LP_COLOR_TELNET: Color used for displaying the hostname when connected with Telnet.
+# See also: LP_HOSTNAME_ALWAYS.
+# Default: $WARN_RED
+LP_COLOR_TELNET=$WARN_RED
+
+# LP_COLOR_TERRAFORM: Color used for displaying a Terraform workspace.
+# See also: LP_ENABLE_TERRAFORM.
+# New in version 2.1.
+# Default: $PINK
+LP_COLOR_TERRAFORM=$PINK
+
+# LP_COLOR_TIME: Color used for displaying the current time.
+# See also: LP_ENABLE_TIME.
+# Default: $BLUE
+LP_COLOR_TIME=$BLUE
+
+# LP_COLOR_UP: Color used to indicate that the current repository is up-to-date and no commits differ from the remote tracking branch.
+# Default: $GREEN
+LP_COLOR_UP=$GREEN
+
+# LP_COLOR_USER_ALT: Color used for displaying the username when running as a different user than the login user.
+# Default: $BOLD
+LP_COLOR_USER_ALT=$BOLD
+
+# LP_COLOR_USER_LOGGED: Color used for displaying the username when running as the login user.
+# See also: LP_USER_ALWAYS.
+# Default: ""
+LP_COLOR_USER_LOGGED=""
+
+# LP_COLOR_USER_ROOT: Color used for displaying the username when running as root.
+# Default: $BOLD_YELLOW
+LP_COLOR_USER_ROOT=$BOLD_YELLOW
+
+# LP_COLOR_VIRTUALENV: Color used for displaying a Python virtual env or Red Hat Software Collection.
+# See also: LP_ENABLE_VIRTUALENV and LP_ENABLE_SCLS.
+# Default: $CYAN
+LP_COLOR_VIRTUALENV=$CYAN
+
+# LP_COLOR_WRITE: Color used for LP_MARK_PERM when the user has write permissions to the current working directory.
+# See also: LP_ENABLE_PERM and LP_COLOR_NOWRITE.
+# Default: $GREEN
+LP_COLOR_WRITE=$GREEN
+
+# LP_COLOR_X11_OFF: Color used for indicating that a display is not connected.
+# Default: $YELLOW
+LP_COLOR_X11_OFF=$YELLOW
+
+# LP_COLOR_X11_ON: Color used for indicating that a display is connected.
+# Default: $GREEN
+LP_COLOR_X11_ON=$GREEN

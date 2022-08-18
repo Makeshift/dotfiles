@@ -253,6 +253,8 @@ alias less="less -r"                                                      # Inte
 [ -f "$HOME/bin/baskmarks.sh" ] && . "$HOME/.local/bin/bashmarks.sh"
 # Liquidprompt, pretty context-aware prompt
 [ -f "$HOME/liquidprompt/liquidprompt" ] && . "$HOME/liquidprompt/liquidprompt"
+# cod, shell autcomplete generator
+if command -v cod >/dev/null; then . <("cod" init $$ bash); fi
 # Make stderr red
 [ -f "$HOME/bin/libstderred.so" ] && export LD_PRELOAD="/home/connor/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
 
