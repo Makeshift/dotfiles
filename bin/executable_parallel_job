@@ -1,0 +1,24 @@
+#!/bin/bash
+if [[ ( $# == "--help") ||  $# == "-h" ]] ; then
+    echo -e "
+Usage: ${0} [file]
+
+Will open an editor and allow you to paste a list of jobs (one per line). Will then run all of those jobs in parallel.
+If given an arg, will treat it as a file.
+    "
+    exit 0
+fi
+
+file="$1"
+if [ -z "$1" ]; then
+    tmp=true
+    file=$(mktemp)
+    "${EDITOR:-nano}" "$file"
+fi
+if [[ $(stat -c %s "$file") < 1 ]]; then
+    echo "File size not big enough, cancelled."
+fi
+time parallel :::: "$file"
+# if [ ! -z "$tmp" ]; then
+#     rm "$tmp" 2> /dev/null
+# fi

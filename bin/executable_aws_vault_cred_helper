@@ -1,0 +1,15 @@
+#!/bin/bash
+trap 'trap - SIGTERM && kill 0' SIGINT SIGTERM EXIT
+
+want_creds=$1
+# If we already have credentials, return them
+if aws-vault list | grep -w $want_creds | awk '{print $3}' | grep sts > /dev/null; then
+  timeout 10 aws-vault exec $want_creds --json --no-session || exit 1
+  exit 0
+fi
+
+# If we need creds, ask the user for them directly as aws-vault's output will get eaten by aws-cli
+echo -en "Enter MFA code for $(aws --profile $want_creds configure get mfa_serial): " > $(tty)
+timeout 20 aws-vault exec $want_creds --prompt=terminal --json > /dev/null 2>&1 || exit 1
+timeout 10 aws-vault exec $want_creds --json --no-session || exit 1
+exit 0

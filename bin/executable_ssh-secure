@@ -1,0 +1,39 @@
+#!/bin/bash
+
+if [ `whoami` != 'root' ]
+  then
+    echo -e "Usage: \n\tsudo --preserve-env=PATH --preserve-env=USER env $0"
+    exit 1
+fi
+echo "This script will:"
+echo "* Set ChallengeResponseAuthentication no"
+echo "* Set PasswordAuthentication no"
+echo "* Set UsePAM no"
+echo "* Set PermitRootLogin no"
+echo
+echo "WARNING: This script will make you unable to log in if you do not have a working SSH key."
+read -r -p "Are you sure you want to continue? [y/N] " response
+response=${response,,}    # tolower
+
+function findAndAdd() {
+    find=$1
+    replace=$2
+    file=$3
+    if \egrep "$find" "$file"; then
+        echo "Replacing $find with $replace"
+        sed -i -E "s/$find/$replace/gp" "$file"
+    elif \egrep "${replace/ /[[:space:]]}" "$file"; then
+        echo "$replace is already set"
+    else
+        echo "Adding $replace to $file"
+        echo "$replace" >> "$file"
+    fi
+}
+
+if [[ "$response" =~ ^(yes|y)$ ]]; then
+    findAndAdd "^ChallengeResponseAuthentication[[:space:]]+yes" "ChallengeResponseAuthentication no" "/etc/ssh/sshd_config"
+    findAndAdd "^PasswordAuthentication[[:space:]]+yes" "PasswordAuthentication no" "/etc/ssh/sshd_config"
+    findAndAdd "^UsePAM[[:space:]]+y" "UsePAM no" "/etc/ssh/sshd_config"
+    findAndAdd "^PermitRootLogin[[:space:]]+yes" "PermitRootLogin no" "/etc/ssh/sshd_config"
+fi
+

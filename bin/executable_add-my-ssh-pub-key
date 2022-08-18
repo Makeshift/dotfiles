@@ -1,0 +1,26 @@
+#!/bin/bash
+
+key="ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAgEApODhuUkBSCJRU8+YvT6SVtfwsNJIY06Oafrum6MCIKIKh4UAMe3MtlsXbVGvRiZ1cPMYzVReaWu+XN5P/tFX1hFWwhIMXHo84zJZlQetyKsf1AFYCHXthRARF77SxRTA+Kip4iTnYOyrDofb0JXWmNBFUxuDkmzL6JFkrkstNoV7iPqtTCgS4JL0m/slEfAOyh0r8kjNGBxLF7zpIOdRhBpC+nf6J8KqTBaDyWZgbijMyrehlodrV7TOvzEFryz+EKYtuHIuJgH9YkYuHS16tO9bGqlBcfIWMlD2WUV/fy8qCcI9h5nCWhHsXR/VUvZ6PdthNLuqBZuoSnr+rj9eFAnhPhJMAaF4UYCYM3exaqbMq7w96PkFR3GIcVK761gWeKJFM6pW3YHC5h3XuTNOJID1UT/0L3G2z4Ajt6rgKZsTbaXIv8ldlMnhfAOnASpL5vF1BCVvIJaKt4+i/309ahEDfG0fwry+yHjSCrrl3hN6N1OphZLRCT/9Q/8iJziIxESpdjff69fmLIyQs61aQWNoMcsA2iMI3745xMTzhJg2VYQniRwcgpZSJQm3K47vh2BSfr+NbfpzraT50Mns5K3Tad8qHqESjvA3i07Z62WEaP2rFaGGmvLdac1YTfyPuMUg9fPjkcSs+faHoPHZUbRYH/4DCvWNBNw8WE2SPss= Connor Bell"
+
+mkdir -p ~/.ssh/
+if ! grep -F "$key" ~/.ssh/authorized_keys > /dev/null; then
+    echo -e "\n${key}\n" >> ~/.ssh/authorized_keys
+    echo "Content of authorized_keys: "
+    cat ~/.ssh/authorized_keys
+    echo "Done"
+else
+    echo "Your key is already there, dingus."
+fi
+
+chmod 700 ~/.ssh 2> /dev/null
+chmod 644 ~/.ssh/authorized_keys 2> /dev/null
+chmod 644 ~/.ssh/known_hosts 2> /dev/null
+chmod 644 ~/.ssh/config 2> /dev/null
+chmod 600 ~/.ssh/id_rsa 2> /dev/null
+chmod 644 ~/.ssh/id_rsa.pub 2> /dev/null
+chown -R $USER:$USER ~/.ssh 2> /dev/null
+
+if [ -d "~/.ssh/keys" ]; then
+    cd ~/.ssh/keys
+    chmod 600 *
+fi

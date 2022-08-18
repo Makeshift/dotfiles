@@ -10,6 +10,9 @@ They are managed using [chezmoi](https://www.chezmoi.io/).
 # Install:
 sh -c "$(curl -fsLS https://chezmoi.io/get)" -- init --apply Makeshift
 
+# Install as oneshot:
+$ sh -c "$(curl -fsLS https://chezmoi.io/get)" -- init --one-shot Makeshift
+
 # Add a new file:
 chezmoi add $FILE
 
@@ -18,6 +21,12 @@ chezmoi update
 
 # If you've modified the local chezmoi repo in `~/.local/share/chezmoi/`, this applies those changes to your homedir:
 chezmoi apply
+
+# go to `~/.local/share/chezmoi
+chezmoi cd
+
+# diff local repo -> homedir
+chezmoi diff
 
 
 ```

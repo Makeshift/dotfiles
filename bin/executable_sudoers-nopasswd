@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ `whoami` != 'root' ]
+  then
+    echo -e "Usage: \n\tsudo --preserve-env=PATH --preserve-env=USER env $0"
+    exit 1
+fi
+
+if [ $USER == 'root' ]; then
+    echo "The \$USER var is coming back as root. You need to run this command with sudo -e to preserve the user environment."
+    echo "Alternatively, here's the command you need: echo -ne \"\\nUSERNAME ALL=(ALL) NOPASSWD: ALL\" \>\> /etc/sudoers"
+else
+    echo -ne "\n$USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+    echo "Done."
+fi
