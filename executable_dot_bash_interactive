@@ -128,12 +128,12 @@ if command -v exa >/dev/null; then alias ls="exa -F"; fi # Use exa if it's avail
 if command -v bat >/dev/null; then
   export BAT_THEME="Solarized (dark)"
   alias cat="bat" # Use bat if it's available
-fi                                                      
-if command -v dust >/dev/null; then 
+fi
+if command -v dust >/dev/null; then
   alias du="dust" # Use dust if it's available
 else
   alias du="du -ch" # Makes du human readable and gives a grand total
-fi 
+fi
 
 # If no args are provided, pretty print mounts
 function mount() {
@@ -251,7 +251,7 @@ alias less="less -r"                                                      # Inte
 # TODO: Replace file tab-completion with QFC
 [ -f "$HOME/.qfc/bin/qfc.sh" ] && . "$HOME/.qfc/bin/qfc.sh"
 # Bash bookmarks, 'l', 'g', 's' commands
-[ -f "$HOME/bin/baskmarks.sh" ] && . "$HOME/bin/bashmarks.sh"
+[ -f "$HOME/bin/baskmarks.sh" ] && . "$HOME/.local/bin/bashmarks.sh"
 # Liquidprompt, pretty context-aware prompt
 [ -f "$HOME/liquidprompt/liquidprompt" ] && . "$HOME/liquidprompt/liquidprompt"
 # Make stderr red
