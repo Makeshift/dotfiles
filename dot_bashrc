@@ -1,5 +1,4 @@
 #!/bin/bash
-set -a
 ###### Source vars we don't sync to git ######
 [ -f .bash_secret ] && . "$HOME/.bash_secret"
 

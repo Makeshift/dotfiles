@@ -1,5 +1,4 @@
 #!/bin/bash
-set -a
 # This script is called if we're in an interactive shell only
 
 # Set a bunch of useful stuff
@@ -262,4 +261,4 @@ alias less="less -r"                                                      # Inte
 
 ##### Finally, Neofetch to show system summary #####
 
-#if command -v neofetch >/dev/null; then neofetch; fi
+if command -v neofetch >/dev/null; then neofetch; fi
