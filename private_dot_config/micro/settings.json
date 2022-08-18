@@ -1,0 +1,13 @@
+{
+    "autosu": true,
+    "backup": false,
+    "clipboard": "terminal",
+    "diffgutter": true,
+    "ignorecase": true,
+    "mkparents": true,
+    "paste": true,
+    "rmtrailingws": true,
+    "savecursor": true,
+    "tabstospaces": true,
+    "xterm": true
+}
