@@ -53,8 +53,8 @@ if [[ "$(uname -r)" =~ "microsoft" ]]; then
   fix_wsl2_interop
   sudo service duplicati start >/dev/null
   sudo service docker start >/dev/null
-  eval "$(ssh-agent)" >/dev/null
-  ssh-add >/dev/null
+  eval "$(ssh-agent)" >/dev/null 2>&1
+  ssh-add >/dev/null 2>&1
 fi
 
 #### Shell Options ####

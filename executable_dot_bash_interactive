@@ -250,7 +250,7 @@ alias less="less -r"                                                      # Inte
 # TODO: Replace file tab-completion with QFC
 [ -f "$HOME/.qfc/bin/qfc.sh" ] && . "$HOME/.qfc/bin/qfc.sh"
 # Bash bookmarks, 'l', 'g', 's' commands
-[ -f "$HOME/bin/baskmarks.sh" ] && . "$HOME/.local/bin/bashmarks.sh"
+[ -f "$HOME/.local/bin/bashmarks.sh" ] && . "$HOME/.local/bin/bashmarks.sh"
 # Liquidprompt, pretty context-aware prompt
 [ -f "$HOME/liquidprompt/liquidprompt" ] && . "$HOME/liquidprompt/liquidprompt"
 # cod, shell autcomplete generator

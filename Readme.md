@@ -27,13 +27,16 @@ chezmoi cd
 
 # diff local repo -> homedir
 chezmoi diff
-
-
 ```
 
 ## Notes
 
 * Use `command -v` instead of `which` ([Why?](https://stackoverflow.com/a/677212))
+
+## TODO
+
+* Get a full list of dependencies
+* Make wrapper scripts for all the scripts we can get from elsewhere and make them download/install when called
 
 ## Dependencies
 
