@@ -5,12 +5,12 @@
     }
   ],
   "settings": {
-    "files.autoSave": "afterDelay",
+    "files.autoSave": "off",
     "emeraldwalk.runonsave": {
       "commands": [
         {
           "match": ".*",
-          "isAsync": true,
+          "isAsync": false,
           "cmd": "chezmoi apply"
         }
       ]

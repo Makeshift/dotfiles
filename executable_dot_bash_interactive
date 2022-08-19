@@ -246,20 +246,20 @@ alias less="less -r"                                                      # Inte
 [ -f "$HOME/.resh/shellrc" ] && . "$HOME/.resh/shellrc"
 # shellcheck source=/home/connor/.bash-preexec.sh
 [ -f "$HOME/.bash-preexec.sh" ] && . "$HOME/.bash-preexec.sh"
-# Quick Command-line File Completion, hit ctrl+f to open a nice file browser
-# TODO: Replace file tab-completion with QFC
+# Quick Command-line File Completion, hit ctrl+f to open a nice file browser TODO: Replace file tab-completion with QFC
+# shellcheck source=/home/connor/.qfc/bin/qfc.sh
 [ -f "$HOME/.qfc/bin/qfc.sh" ] && . "$HOME/.qfc/bin/qfc.sh"
-# Bash bookmarks, 'l', 'g', 's' commands
+# Bash bookmarks, 'l', 'g', 's' commands TODO: Bashmarks is broken?
+# shellcheck source=/home/connor/bin/bashmarks.sh
 [ -f "$HOME/.local/bin/bashmarks.sh" ] && . "$HOME/.local/bin/bashmarks.sh"
 # Liquidprompt, pretty context-aware prompt
+# shellcheck source=/home/connor/liquidprompt/liquidprompt
 [ -f "$HOME/liquidprompt/liquidprompt" ] && . "$HOME/liquidprompt/liquidprompt"
 # cod, shell autcomplete generator
+# shellcheck source=./bin/executable_cod
 if command -v cod >/dev/null; then . <("cod" init $$ bash); fi
 # Make stderr red
 [ -f "$HOME/bin/libstderred.so" ] && export LD_PRELOAD="/home/connor/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
-
-###### Source stuff we don't sync to git ######
-[ -f .bash_interactive_secret ] && . .bash_interactive_secret
 
 ##### Finally, Neofetch to show system summary #####
 
