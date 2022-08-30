@@ -84,7 +84,7 @@ function escapeDoubleQuotes() {
 
 function makeAliasTable() {
   local list
-  list=$(/bin/grep -i --no-filename '^alias\s+*' $HOME/.bashrc $HOME/.bash_interactive | sed "s/alias //g")
+  list=$(/bin/grep -i --no-filename '^alias\s+*' "$HOME"/.bashrc "$HOME"/.bash_interactive | sed "s/alias //g")
   local sep="|||"
   local colourEnd="\033[0m"
   local nicelist="${colourEnd}Alias${colourEnd}${sep}${colourEnd}Command${colourEnd}${sep}${colourEnd}Description${colourEnd}\n"
@@ -110,6 +110,101 @@ function makeAliasTable() {
 }
 
 alias aliases=makeAliasTable
+
+# If no args are provided, pretty print mounts
+function mount() {
+  if [ -n "$1" ]; then
+    command mount "$@"
+  else
+    command mount | column -t
+  fi
+}
+
+function dcu() {
+  docker-compose "$@" up -d
+  docker-compose "$@" logs -f --tail 50
+}
+
+function dcr() {
+  docker-compose "$@" restart
+  docker-compose "$@" logs -f --tail 50
+}
+
+function getips() {
+  echo "Local:"
+  ifconfig -a | /bin/grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }'
+  echo -e "Public:\n    $(curl -m 2 -s checkip.amazonaws.com || echo Unknown)"
+}
+
+# Make extract easier
+function extract() {
+  if [ -f "$1" ]; then
+    case $1 in
+    *.tar.xz) tar -xvf "$1" ;;
+    *.tar.bz2) tar -jxvf "$1" ;;
+    *.tar.gz) tar -zxvf "$1" ;;
+    *.bz2) bunzip2 "$1" ;;
+    *.dmg) hdiutil mount "$1" ;;
+    *.gz) gunzip "$1" ;;
+    *.tar) tar -xvf "$1" ;;
+    *.tbz2) tar -jxvf "$1" ;;
+    *.tgz) tar -zxvf "$1" ;;
+    *.zip) unzip "$1" ;;
+    *.pax) pax -rf "$1" ;;
+    *.pax.z) uncompress "$1" --stdout | pax -r ;;
+    *.rar) 7z x "$1" ;;
+    *.z) uncompress "$1" ;;
+    *.7z) 7z x "$1" ;;
+    *) echo "'$1' cannot be extracted/mounted via extract()" ;;
+    esac
+  else
+    echo "'$1' is not a valid file!"
+  fi
+}
+
+# Remembering bc exists is hard
+function math() { echo "scale=5;" "$@" | bc -l; }
+
+alias ll='ls -lah'                                                        # ls list with hidden files, human readable sizes
+alias cg='cd `git rev-parse --show-toplevel`'                             # Jumps to the top level of a git repo
+alias cd..='cd ..'                                                        # Typo fixes
+alias path='echo -e ${PATH//:/\\n}'                                       # Pretty-print all entries in $PATH
+alias reset="reset;clear"                                                 # Clean up the screen
+alias lsdir="ls -d */"                                                    # Show only dirs
+alias vpn=xaval                                                           # Poor man's SSH-based VPN (https://github.com/ivanilves/xiringuito)
+alias disable-git-ps1='source $(hash -t export-to-shell) LP_ENABLE_GIT=0' # Sometimes liquidprompt's git prompt lags a lot, this disables it
+alias enable-git-ps1='source $(hash -t export-to-shell) LP_ENABLE_GIT=1'  # Re-enables liquidprompt's git prompt
+alias forget='history -d $((HISTCMD - 1))'                                # Forget the last command
+
+###### Interactive Imports ######
+# RESH - enhanced shell
+# shellcheck source=/home/connor/.resh/shellrc
+[ -f "$HOME/.resh/shellrc" ] && . "$HOME/.resh/shellrc"
+# shellcheck source=/home/connor/.bash-preexec.sh
+[ -f "$HOME/.bash-preexec.sh" ] && . "$HOME/.bash-preexec.sh"
+# Quick Command-line File Completion, hit ctrl+f to open a nice file browser TODO: Replace file tab-completion with QFC
+# shellcheck source=/home/connor/.qfc/bin/qfc.sh
+[ -f "$HOME/.qfc/bin/qfc.sh" ] && . "$HOME/.qfc/bin/qfc.sh"
+# Bash bookmarks, 'l', 'g', 's' commands TODO: Bashmarks is broken?
+# shellcheck source=/home/connor/bin/bashmarks.sh
+[ -f "$HOME/.local/bin/bashmarks.sh" ] && . "$HOME/.local/bin/bashmarks.sh"
+# Liquidprompt, pretty context-aware prompt
+# shellcheck source=/home/connor/liquidprompt/liquidprompt
+[ -f "$HOME/liquidprompt/liquidprompt" ] && . "$HOME/liquidprompt/liquidprompt"
+# cod, shell autcomplete generator
+# shellcheck source=./bin/executable_cod
+if command -v cod >/dev/null; then . <("cod" init $$ bash); fi
+# Make stderr red
+[ -f "$HOME/bin/libstderred.so" ] && export LD_PRELOAD="$HOME/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
+# Add chezmoi completions TODO: Broken
+#if command -v chezmoi >/dev/null; then . <(chezmoi completion bash); fi
+
+##### Neofetch to show system summary #####
+
+if command -v neofetch >/dev/null; then neofetch; fi
+
+#### Replace built-ins right at the end so other scripts don't cause issues ####
+
 # Use ripgrep if it's available
 if command -v rg >/dev/null; then
   alias grep=rg
@@ -133,33 +228,6 @@ if command -v dust >/dev/null; then
 else
   alias du="du -ch" # Makes du human readable and gives a grand total
 fi
-
-# If no args are provided, pretty print mounts
-function mount() {
-  local cmd
-  cmd=$(command -v mount)
-  if [ -n "$1" ]; then
-    $cmd "$@"
-  else
-    $cmd | column -t
-  fi
-}
-
-function dcu() {
-  docker-compose "$@" up -d
-  docker-compose "$@" logs -f --tail 50
-}
-
-function dcr() {
-  docker-compose "$@" restart
-  docker-compose "$@" logs -f --tail 50
-}
-
-function getips() {
-  echo "Local:"
-  ifconfig -a | /bin/grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }'
-  echo -e "Public:\n    $(curl -m 2 -s checkip.amazonaws.com || echo Unknown)"
-}
 
 # Make cd a bit smarter
 function cd() {
@@ -195,72 +263,8 @@ function cd() {
   builtin cd "$path" && ls
 }
 
-# Make extract easier
-function extract() {
-  if [ -f "$1" ]; then
-    case $1 in
-    *.tar.xz) tar -xvf "$1" ;;
-    *.tar.bz2) tar -jxvf "$1" ;;
-    *.tar.gz) tar -zxvf "$1" ;;
-    *.bz2) bunzip2 "$1" ;;
-    *.dmg) hdiutil mount "$1" ;;
-    *.gz) gunzip "$1" ;;
-    *.tar) tar -xvf "$1" ;;
-    *.tbz2) tar -jxvf "$1" ;;
-    *.tgz) tar -zxvf "$1" ;;
-    *.zip) unzip "$1" ;;
-    *.pax) pax -rf "$1" ;;
-    *.pax.z) uncompress "$1" --stdout | pax -r ;;
-    *.rar) 7z x "$1" ;;
-    *.z) uncompress "$1" ;;
-    *.7z) 7z x "$1" ;;
-    *) echo "'$1' cannot be extracted/mounted via extract()" ;;
-    esac
-  else
-    echo "'$1' is not a valid file!"
-  fi
-}
-
-# Remembering bc exists is hard
-function math() { echo "scale=5;" "$@" | bc -l; }
-
-alias ll='ls -lah'                                                        # ls list with hidden files, human readable sizes
-alias cg='cd `git rev-parse --show-toplevel`'                             # Jumps to the top level of a git repo
-alias cd..='cd ..'                                                        # Typo fixes
-alias mkdir='mkdir -pv'                                                   # Makes parent directories as well
-alias df='df -H'                                                          # Makes df human readable by default
-alias rm='rm -I --preserve-root'                                          # Prompt if removing more than 3 files or if recursive, also don't let me delete root
-alias wget='wget -c'                                                      # Allows me to resume wget downloads
-alias path='echo -e ${PATH//:/\\n}'                                       # Pretty-print all entries in $PATH
-alias reset="reset;clear"                                                 # Clean up the screen
-alias lsdir="ls -d */"                                                    # Show only dirs
-alias vpn=xaval                                                           # Poor man's SSH-based VPN (https://github.com/ivanilves/xiringuito)
-alias disable-git-ps1='source $(hash -t export-to-shell) LP_ENABLE_GIT=0' # Sometimes liquidprompt's git prompt lags a lot, this disables it
-alias enable-git-ps1='source $(hash -t export-to-shell) LP_ENABLE_GIT=1'  # Re-enables liquidprompt's git prompt
-alias forget='history -d $((HISTCMD - 1))'                                # Forget the last command
-alias less="less -r"                                                      # Interpret colours with less
-
-###### Interactive Imports ######
-# RESH - enhanced shell
-# shellcheck source=/home/connor/.resh/shellrc
-[ -f "$HOME/.resh/shellrc" ] && . "$HOME/.resh/shellrc"
-# shellcheck source=/home/connor/.bash-preexec.sh
-[ -f "$HOME/.bash-preexec.sh" ] && . "$HOME/.bash-preexec.sh"
-# Quick Command-line File Completion, hit ctrl+f to open a nice file browser TODO: Replace file tab-completion with QFC
-# shellcheck source=/home/connor/.qfc/bin/qfc.sh
-[ -f "$HOME/.qfc/bin/qfc.sh" ] && . "$HOME/.qfc/bin/qfc.sh"
-# Bash bookmarks, 'l', 'g', 's' commands TODO: Bashmarks is broken?
-# shellcheck source=/home/connor/bin/bashmarks.sh
-[ -f "$HOME/.local/bin/bashmarks.sh" ] && . "$HOME/.local/bin/bashmarks.sh"
-# Liquidprompt, pretty context-aware prompt
-# shellcheck source=/home/connor/liquidprompt/liquidprompt
-[ -f "$HOME/liquidprompt/liquidprompt" ] && . "$HOME/liquidprompt/liquidprompt"
-# cod, shell autcomplete generator
-# shellcheck source=./bin/executable_cod
-if command -v cod >/dev/null; then . <("cod" init $$ bash); fi
-# Make stderr red
-[ -f "$HOME/bin/libstderred.so" ] && export LD_PRELOAD="/home/connor/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
-
-##### Finally, Neofetch to show system summary #####
-
-if command -v neofetch >/dev/null; then neofetch; fi
+alias mkdir='mkdir -pv'          # Makes parent directories as well
+alias df='df -H'                 # Makes df human readable by default
+alias rm='rm -I --preserve-root' # Prompt if removing more than 3 files or if recursive, also don't let me delete root
+alias wget='wget -c'             # Allows me to resume wget downloads
+alias less="less -r"             # Interpret colours with less

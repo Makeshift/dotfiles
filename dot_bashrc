@@ -4,7 +4,7 @@
 [ -f .bash_secret ] && . "$HOME/.bash_secret"
 
 #### General PATH stuff and imports ####
-PATH="/home/$USER/bin:/home/$USER/.local/bin:/home/$USER/go/bin:$HOME/.cargo/bin:/usr/local/go/bin:$PATH"
+PATH="$HOME/bin:$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:/usr/local/go/bin:$PATH"
 
 # NPM / NVM
 if command -v nvm >/dev/null; then
@@ -33,11 +33,24 @@ MINGW*) export os=Windows ;;
 *) export os="UNKNOWN:${unameOut}" ;;
 esac
 
-# Handle armhf systems by appending _arm32 to compiled binaries in ~/bin
-architecture="$(dpkg --print-architecture)"
+# Handle armhf/aarch64 systems by appending _arm32 to compiled binaries in ~/bin TODO: should be fixed by wrapper
+architecture="$(uname -m)"
 export architecture
-if [[ "$architecture" =~ "armhf" ]]; then
+if [[ "$architecture" =~ "aarch64" ]]; then
   export archstring="_arm32"
+fi
+
+# If there are files in our home bin with an archstring that matches our arch
+#  then create aliases to them so they take priority over PATH
+# Also this is a funky way to do this, so stop shellcheck whining
+# TODO wrapper script should handle this
+# shellcheck disable=all
+if [ -n "${archstring}" ]; then
+  for file in $HOME/bin/*${archstring}; do
+    file=$(basename "$file")
+    file=${file%$archstring}
+    alias ${file}=${file}${archstring}
+  done
 fi
 
 #### WSL ####
@@ -94,6 +107,7 @@ alias vim='$EDITOR'
 alias vi='$EDITOR'
 
 #### Global aliases ####
+alias get_numerical_permissions='stat --format "%a"'
 alias chown='chown --preserve-root' # Don't let me mess up root
 alias chmod='chmod --preserve-root' # Don't let me mess up root
 alias chgrp='chgrp --preserve-root' # Don't let me mess up root
@@ -104,10 +118,10 @@ alias python='python3'              # I literally never want python2 by accident
 alias t='tail -f 2>&1 /dev/null'    # Just keeps a session going
 # Override 'chezmoi cd' to go to the chezmoi dir instead of launching a new shell
 function chezmoi() {
-  if [[ "$2" == "cd" ]]; then
-    cd "$(chezmoi source-path)"
+  if [[ "$1" == "cd" ]]; then
+    cd "$(command chezmoi source-path)"
   else
-    chezmoi "$*"
+    command chezmoi "$*"
   fi
 }
 # Add an 'apt whatprovides' command, because I constantly forget apt doesn't have whatprovides
@@ -119,19 +133,8 @@ function apt() {
   fi
 }
 
-# If there are files in our home bin with an archstring that matches our arch
-#  then create aliases to them so they take priority over PATH
-# Also this is a funky way to do this, so stop shellcheck whining
-# shellcheck disable=all
-if [ -n "${archstring}" ]; then
-  for file in $HOME/bin/*${archstring}; do
-    file=$(basename "$file")
-    file=${file%$archstring}
-    alias ${file}=${file}${archstring}
-  done
-fi
-
 #### Global Functions ####
+# Gets $SHOUTRRR_TELEGRAM_CHAT_URI from .bash_secret
 function telegram() {
   if which shoutrrr >/dev/null; then
     shoutrrr send "$SHOUTRRR_TELEGRAM_CHAT_URI" "$*"
@@ -147,16 +150,22 @@ export DOCKER_BUILDKIT=1
 # AWS_VAULT_BACKEND
 # AWS_VAULT_FILE_PASSPHRASE
 # AWS_PROFILE
+
 # export VAULTIFY_DEBUG=1
-AWS_PROGRAMS_TARGET_PATH="/usr/local/sbin"
+AWS_PROGRAMS_TARGET_PATH="$HOME/.aws/bin"
+mkdir -p "$AWS_PROGRAMS_TARGET_PATH" >/dev/null 2>&1
+export "PATH=${AWS_PROGRAMS_TARGET_PATH}:${PATH}"
+
+export AWS_VAULT_SESSION_TIME_HOURS=8
 
 if command -v aws_completer >/dev/null; then
   complete -C "$(command -v aws_completer)" aws
 fi
 
 # This 'vaultify' script wraps the given program with aws-vault
-if [ ! -f "$AWS_PROGRAMS_TARGET_PATH/vaultify" ]; then
-  cat >"$AWS_PROGRAMS_TARGET_PATH/vaultify" <<"EOF"
+# The "SHELLSCRIPT" heredoc delimiter is used specifically to make it easier to edit with the 'Template Literal Editor'
+#  extension in VSCode: https://marketplace.visualstudio.com/items?itemName=plievone.vscode-template-literal-editor
+cat >"$AWS_PROGRAMS_TARGET_PATH/vaultify" <<"SHELLSCRIPT"
 #!/bin/bash
 function debug() { if [ -n "$VAULTIFY_DEBUG" ]; then echo "$@" >$(tty); fi; }
 program_name=$(basename "$0")
@@ -168,18 +177,16 @@ debug "Matching executables on path: ${executables_on_path[*]}"
 actual_program=$(echo "${executables_on_path[*]}" | grep -v "$current_script_path" | head -n1)
 debug "First matching executable not including current script path: $actual_program"
 vault_exe=$(command -v aws-vault)
-if [ -n "$AWS_SESSION_TOKEN" ]; then
-  debug "AWS session token already set, so vault has probably already been ran, not running again"
+if [ -n "$AWS_VAULT" ]; then
+  debug "Env var AWS_VAULT is set, so vault has probably already been ran, not running again"
   final_exec="$actual_program $*"
 else
-  final_exec="${vault_exe} exec ${AWS_PROFILE} -- ${actual_program} $*"
+  final_exec="${vault_exe} exec --duration=${AWS_VAULT_SESSION_TIME_HOURS-8}h ${AWS_PROFILE} -- ${actual_program} $*"
 fi
 debug "Final command: $final_exec"
 eval "$final_exec"
-
-EOF
-  chmod +x "$AWS_PROGRAMS_TARGET_PATH/vaultify"
-fi
+SHELLSCRIPT
+chmod +x "$AWS_PROGRAMS_TARGET_PATH/vaultify"
 # This function creates a new wrapper script in $AWS_PROGRAMS_TARGET_PATH, which by default is /usr/local/sbin as it is earlier in the PATH than
 #  /usr/local/bin, meaning it will be found first by commands/scripts looking for executables.
 function make_vault_script() {
@@ -189,7 +196,7 @@ function make_vault_script() {
   fi
 }
 # Create vault scripts for programs requiring AWS credentials
-vaultify_programs=("aws" "terraform" "terragrunt" "ecs-cli" "chamber" "terragrunt-status" "awslogs" "aws-shell")
+vaultify_programs=("aws" "terraform" "terragrunt" "ecs-cli" "chamber" "terragrunt-status" "awslogs" "aws-shell" "s3cmd")
 for program in "${vaultify_programs[@]}"; do
   make_vault_script "$program"
 done

@@ -5,3 +5,4 @@ dotfiles.code-workspace
 .ssh/config
 .ssh/id_*
 .ssh/id_*.pub
+test
