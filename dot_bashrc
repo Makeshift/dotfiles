@@ -151,13 +151,19 @@ export DOCKER_BUILDKIT=1
 # AWS_VAULT_FILE_PASSPHRASE
 # AWS_PROFILE
 
-# export VAULTIFY_DEBUG=1
-AWS_PROGRAMS_TARGET_PATH="$HOME/.aws/bin"
+export AWS_VAULT_FILE_PASSPHRASE="supersecretpassword" # Set this to something unique, it's used to encrypt your AWS credentials.
+export AWS_VAULT_BACKEND=file
+export AWS_PROFILE=iea
+
+# export VAULTIFY_DEBUG=1                         # Uncomment for extra debugging output
+export AWS_VAULT_SESSION_TIME_HOURS=8 # Change this to suit your needs
+
+AWS_PROGRAMS_TARGET_PATH="$HOME/.aws/bin"         # This is where we install symlinks to wrappers for AWS commands
+export PATH="${AWS_PROGRAMS_TARGET_PATH}:${PATH}" # Make sure our symlinks are earlier in the path than all the others
+
 mkdir -p "$AWS_PROGRAMS_TARGET_PATH" >/dev/null 2>&1
-export "PATH=${AWS_PROGRAMS_TARGET_PATH}:${PATH}"
 
-export AWS_VAULT_SESSION_TIME_HOURS=8
-
+# Enable AWS auto-completion
 if command -v aws_completer >/dev/null; then
   complete -C "$(command -v aws_completer)" aws
 fi
@@ -187,7 +193,7 @@ debug "Final command: $final_exec"
 eval "$final_exec"
 SHELLSCRIPT
 chmod +x "$AWS_PROGRAMS_TARGET_PATH/vaultify"
-# This function creates a new wrapper script in $AWS_PROGRAMS_TARGET_PATH, which by default is /usr/local/sbin as it is earlier in the PATH than
+# This function creates a new wrapper script in $AWS_PROGRAMS_TARGET_PATH, which by default is $HOME/.aws/bin which we add to the PATH before
 #  /usr/local/bin, meaning it will be found first by commands/scripts looking for executables.
 function make_vault_script() {
   local program="$1"
@@ -196,7 +202,7 @@ function make_vault_script() {
   fi
 }
 # Create vault scripts for programs requiring AWS credentials
-vaultify_programs=("aws" "terraform" "terragrunt" "ecs-cli" "chamber" "terragrunt-status" "awslogs" "aws-shell" "s3cmd")
+vaultify_programs=("aws" "terraform" "terragrunt" "ecs-cli" "chamber" "terragrunt-status" "awslogs" "aws-shell" "s3cmd" "s3fs")
 for program in "${vaultify_programs[@]}"; do
   make_vault_script "$program"
 done
