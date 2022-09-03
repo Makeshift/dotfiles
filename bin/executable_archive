@@ -1,0 +1,37 @@
+#!/bin/bash
+
+read -r -d '' HELP <<EOF
+Creates an .tar.xz archive of a file or folder
+
+Usage: ${0} <file or folder ...> [archive name]
+
+Arguments:
+  
+
+Depends on bash 4.3+
+TODO: Write this properly
+EOF
+
+function archive() {
+  local name filelist=("${@}")
+  # Check the first arg to make sure it's a file or folder
+  if [ -f "$1" ] || [ -d "$1" ]; then
+    # If there's more than 1 arg and the last arg ends in .xz, use that as the name
+    if [ $# -gt 1 ] && [[ "${*: -1}" == *.xz ]]; then
+      name="${*: -1}"
+      unset "filelist[-1]"
+    # If there's only one argument, use the name of the that file/folder as the name prefix
+    elif [ $# -eq 1 ]; then
+      name="$(basename "$1").tar.xz"
+    else
+      # If there's more than one argument and no name is provided, use the basename of the pwd as the name of the file
+      name="$(basename "$(PWD)").tar.xz"
+    fi
+    # Create the archive
+    tar -cJvf "$name" "${filelist[@]}"
+  else
+    echo "'$1' is not a valid file or directory!"
+  fi
+}
+
+archive "$@"

@@ -162,6 +162,52 @@ function extract() {
   fi
 }
 
+
+# Make a new directory and enter it
+function mkd() {
+  mkdir -p "$@" && cd "$@" || return
+}
+
+# Get the top 10 processes
+function top10() {
+  ps aux | awk 'NR==1 || NR>10 {print}' | column -t
+}
+
+# Get the top 10 memory consumers
+function top10mem() {
+  ps aux | sort -k4 -rn | awk 'NR==1 || NR>10 {print}' | column -t
+}
+
+# Get the top 10 cpu consumers
+function top10cpu() {
+  ps aux | sort -k3 -rn | awk 'NR==1 || NR>10 {print}' | column -t
+}
+
+# Get the top 10 disk consumers
+function top10disk() {
+  du -ah | sort -hr | awk 'NR==1 || NR>10 {print}' | column -t
+}
+
+# Get the top 10 network consumers
+function top10net() {
+  netstat -an | awk '{print $6}' | sort | uniq -c | sort -rn | awk 'NR==1 || NR>10 {print}' | column -t
+}
+
+# Get the top 10 network consumers
+function top10net() {
+  netstat -an | awk '{print $6}' | sort | uniq -c | sort -rn | awk 'NR==1 || NR>10 {print}' | column -t
+}
+
+# Get the top 10 network consumers
+function top10net() {
+  netstat -an | awk '{print $6}' | sort | uniq -c | sort -rn | awk 'NR==1 || NR>10 {print}' | column -t
+}
+
+# Get the top 10 network consumers
+function top10net() {
+  netstat -an | awk '{print $6}' | sort | uniq -c | sort -rn | awk 'NR==1 || NR>10 {print}' | column -t
+}
+
 # Remembering bc exists is hard
 function math() { echo "scale=5;" "$@" | bc -l; }
 

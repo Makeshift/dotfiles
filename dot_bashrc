@@ -62,10 +62,13 @@ fix_wsl2_interop() {
   done
 }
 
-# WSL has no systemd, so start stuff we care about manually
 if [[ "$(uname -r)" =~ "microsoft" ]]; then
   export os=wsl
   fix_wsl2_interop
+
+  # Do we have Genie installed?
+  
+
   sudo service duplicati start >/dev/null
   sudo service docker start >/dev/null
   eval "$(ssh-agent)" >/dev/null 2>&1

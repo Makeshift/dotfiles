@@ -1,0 +1,139 @@
+#!/bin/bash
+
+/bin/echo "UNFINISHED"
+/bin/echo "Check out https://github.com/ko1nksm/getoptions"
+exit 1
+
+read -r -d '' HELP <<"EOF"
+Usage: run_or_get_app [-h | --help] [-d | --debug] [-u | --update] [-i | --ignore-from <PATH>] <APPLICATION> [ARGS]...
+
+Tries to run the given application with the given args, if it's not installed it will try to install it. It is expected that this script is called by a wrapper for the application
+ which provides the environment variables described below.
+If the -u or --update flag is given, it will try to update the application before running it using the environment variables described below.
+If the application is not installed, it will use environment variable(s) to find installers for the application
+
+Environment variables:
+ <ARCHITECTURE>_<APPLICATION>_INSTALLER_<TYPE> = <VALUE>
+  Where:
+   <ARCHITECTURE> is the architecture of the machine as output by $(uname -m)
+   <APPLICATION> is the name of the binary
+   <TYPE> is the type of installer, see 'Installer Types' below
+   <VALUE> is the the value to use, dependent on installer type
+
+ <ARCHITECTURE>_<APPLICATION>_INSTALLER_ARCHIVE_BINARY = <VALUE>
+   If the application is installed in an archive, this is the path to the binary once the archive is extracted (relative to the archive)
+
+Installer Types:
+ - $(ARCHIVE) - A common archive, eg. a tarball, gzip, zip etc. <VALUE> is expected to be a URL.
+ - $(APT) - Provided by apt. <VALUE> is expected to be the name of the package.
+ - $(YUM) - Provided by yum. <VALUE> is expected to be the name of the package.
+
+Options:
+  -h --help
+  -u | --update       Update the application before running it
+  -i | --ignore-from  Ignore binaries from the path <PATH>, eg. where all you wrapper scripts are stored (Can be specified multiple times)
+  -d | --debug        Print debug information directly to TTY
+EOF
+
+options=$(getopt -l "help,update,ignore-from,debug" -o "hui:d" -- "$@")
+eval set -- "$options"
+
+while true; do
+  case "$1" in
+  -h | --help)
+    echo "$HELP"
+    exit 0
+    ;;
+  -u | --update)
+    UPDATE=true
+    shift
+    ;;
+  -i | --ignore-from)
+    IGNORE_FROM+=("$2")
+    shift 2
+    ;;
+  -d | --debug)
+    DEBUG=true
+    shift
+    ;;
+  *)
+    BINARY="$1"
+    shift
+    BINARY_ARGS="$*"
+    break
+    ;;
+  esac
+done
+
+#### Functions ####
+
+# Override echo to write directly to stderr if we have a tty
+#  because a lot of applications grab output from stdout and we don't want to
+#  pollute it
+function echo() {
+  if [ -t 1 ]; then
+    stderr "$@"
+  fi
+}
+
+function stderr() {
+  builtin echo "$@" >&2
+}
+
+function debug() { if [ "$DEBUG" = true ]; then echo "$@"; fi; }
+
+function extract() {
+  if [ -f "$1" ]; then
+    case $1 in
+    *.tar.xz) tar -xvf "$1" ;;
+    *.tar.bz2) tar -jxvf "$1" ;;
+    *.tar.gz) tar -zxvf "$1" ;;
+    *.bz2) bunzip2 "$1" ;;
+    *.dmg) hdiutil mount "$1" ;;
+    *.gz) gunzip "$1" ;;
+    *.tar) tar -xvf "$1" ;;
+    *.tbz2) tar -jxvf "$1" ;;
+    *.tgz) tar -zxvf "$1" ;;
+    *.zip) unzip "$1" ;;
+    *.pax) pax -rf "$1" ;;
+    *.pax.z) uncompress "$1" --stdout | pax -r ;;
+    *.rar) 7z x "$1" ;;
+    *.z) uncompress "$1" ;;
+    *.7z) 7z x "$1" ;;
+    *) echo "'$1' cannot be extracted/mounted via extract()" ;;
+    esac
+  else
+    echo "'$1' is not a valid file!"
+  fi
+}
+
+function call_binary() {
+  local program_name="$1"
+  local args="$2"
+  debug "Want to run: $program_name $args"
+  local executables_on_path
+  executables_on_path=$(which -a "$program_name")
+  debug "Matching executables on path: ${executables_on_path[*]}"
+  # For each path in IGNORE_FROM, remove it from the list of executables on path
+  for path in "${IGNORE_FROM[@]}"; do
+    debug "Removing $path from executables on path"
+    executables_on_path=$(echo "$executables_on_path" | grep -v "$path")
+  done
+  first_result=$(echo "$executables_on_path" | head -n 1)
+  debug "First matching executable: $first_result"
+  if [ -z "$first_result" ]; then
+    stderr "Could not find $program_name on path"
+    exit 1
+  fi
+  "$first_result" "$args"
+}
+
+#### Runtime ####
+
+if [ -z "$BINARY" ]; then
+  stderr "No binary specified"
+  echo "$HELP"
+  exit 1
+fi
+
+call_binary "$BINARY" "$BINARY_ARGS"
