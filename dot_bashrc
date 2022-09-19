@@ -122,7 +122,7 @@ function chezmoi() {
   if [[ "$1" == "cd" ]]; then
     cd "$(command chezmoi source-path)"
   else
-    command chezmoi $@
+    command chezmoi "$@"
   fi
 }
 # Add an 'apt whatprovides' command, because I constantly forget apt doesn't have whatprovides
