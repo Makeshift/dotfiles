@@ -66,9 +66,7 @@ if [[ "$(uname -r)" =~ "microsoft" ]]; then
   export os=wsl
   fix_wsl2_interop
 
-  # Do we have Genie installed?
-  
-
+  [ -z "$(ps -ef | grep cron | grep -v grep)" ] && sudo /etc/init.d/cron start >/dev/null
   sudo service duplicati start >/dev/null
   sudo service docker start >/dev/null
   eval "$(ssh-agent)" >/dev/null 2>&1
@@ -124,7 +122,7 @@ function chezmoi() {
   if [[ "$1" == "cd" ]]; then
     cd "$(command chezmoi source-path)"
   else
-    command chezmoi "$*"
+    command chezmoi $@
   fi
 }
 # Add an 'apt whatprovides' command, because I constantly forget apt doesn't have whatprovides

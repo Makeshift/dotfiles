@@ -162,7 +162,6 @@ function extract() {
   fi
 }
 
-
 # Make a new directory and enter it
 function mkd() {
   mkdir -p "$@" && cd "$@" || return
@@ -186,21 +185,6 @@ function top10cpu() {
 # Get the top 10 disk consumers
 function top10disk() {
   du -ah | sort -hr | awk 'NR==1 || NR>10 {print}' | column -t
-}
-
-# Get the top 10 network consumers
-function top10net() {
-  netstat -an | awk '{print $6}' | sort | uniq -c | sort -rn | awk 'NR==1 || NR>10 {print}' | column -t
-}
-
-# Get the top 10 network consumers
-function top10net() {
-  netstat -an | awk '{print $6}' | sort | uniq -c | sort -rn | awk 'NR==1 || NR>10 {print}' | column -t
-}
-
-# Get the top 10 network consumers
-function top10net() {
-  netstat -an | awk '{print $6}' | sort | uniq -c | sort -rn | awk 'NR==1 || NR>10 {print}' | column -t
 }
 
 # Get the top 10 network consumers
