@@ -225,7 +225,7 @@ alias forget='history -d $((HISTCMD - 1))'                                # Forg
 # shellcheck source=./bin/executable_cod
 if command -v cod >/dev/null; then . <("cod" init $$ bash); fi
 # Make stderr red
-[ -f "$HOME/bin/libstderred.so" ] && export LD_PRELOAD="$HOME/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
+[ -f "$HOME/bin/libstderred.so" ] && [ "$(uname -m)" == "x86_64" ] && export LD_PRELOAD="$HOME/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
 # Add chezmoi completions TODO: Broken
 #if command -v chezmoi >/dev/null; then . <(chezmoi completion bash); fi
 
