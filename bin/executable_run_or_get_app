@@ -1,9 +1,4 @@
 #!/bin/bash
-
-/bin/echo "UNFINISHED"
-/bin/echo "Check out https://github.com/ko1nksm/getoptions"
-exit 1
-
 read -r -d '' HELP <<"EOF"
 Usage: run_or_get_app [-h | --help] [-d | --debug] [-u | --update] [-i | --ignore-from <PATH>] <APPLICATION> [ARGS]...
 
@@ -22,6 +17,9 @@ Environment variables:
 
  <ARCHITECTURE>_<APPLICATION>_INSTALLER_ARCHIVE_BINARY = <VALUE>
    If the application is installed in an archive, this is the path to the binary once the archive is extracted (relative to the archive)
+
+ <ARCHITECTURE>_<APPLICATION>_INSTALLER_ARCHIVE_INSTALL_LOCATION = <VALUE>
+    If the application is installed in an archive, this is the path to the directory where the final executable should be installed
 
 Installer Types:
  - $(ARCHIVE) - A common archive, eg. a tarball, gzip, zip etc. <VALUE> is expected to be a URL.
@@ -58,6 +56,7 @@ while true; do
     ;;
   *)
     BINARY="$1"
+    shift
     shift
     BINARY_ARGS="$*"
     break
@@ -107,6 +106,24 @@ function extract() {
   fi
 }
 
+supported_installer_types=("ARCHIVE" "APT" "YUM")
+
+function get_binary() {
+  local program_name="$1"
+  local install_sources_prefix
+  local search_env
+  local architecture
+  architecture="$(uname -m)"
+  search_env="${architecture}_${program_name}_INSTALLER_"
+  install_sources_prefix=$(printenv | grep "$search_env" | grep -f "${supported_installer_types[@]}" | head -n1)
+  if [ -z "$install_sources_prefix" ]; then
+    echo "No install sources found for $program_name for architecture $(uname -m)"
+    exit 1
+  fi
+  installer_type="${install_sources_prefix#*_INSTALLER_}"
+  handle_installer_type "$installer_type" "$program_name"
+}
+
 function call_binary() {
   local program_name="$1"
   local args="$2"
@@ -122,10 +139,13 @@ function call_binary() {
   first_result=$(echo "$executables_on_path" | head -n 1)
   debug "First matching executable: $first_result"
   if [ -z "$first_result" ]; then
-    stderr "Could not find $program_name on path"
-    exit 1
+    stderr "Could not find $program_name on path, attempting to install"
+    get_binary "$program_name"
+    call_binary "$program_name" "$args"
+  else
+    "$first_result" "${args[@]}"
   fi
-  "$first_result" "$args"
+
 }
 
 #### Runtime ####
@@ -136,4 +156,4 @@ if [ -z "$BINARY" ]; then
   exit 1
 fi
 
-call_binary "$BINARY" "$BINARY_ARGS"
+call_binary "$BINARY" "${BINARY_ARGS}"
