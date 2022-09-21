@@ -8,9 +8,14 @@ export x86_64_git_INSTALLER_APT="git"
 export armv7l_git_INSTALLER_APT="git"
 export aarch64_git_INSTALLER_APT="git"
 export armhf_git_INSTALLER_APT="git"
+export x86_64_go_INSTALLER_APT="golang"
+export armv7l_go_INSTALLER_APT="golang"
+export aarch64_go_INSTALLER_APT="golang"
+export armhf_go_INSTALLER_APT="golang"
 
 tmpdir=$(mktemp -d)
 cd "$tmpdir" || exit 1
 "$HOME"/bin/run_or_get_app git clone https://github.com/Makeshift/resh-custom.git
+"$HOME"/bin/run_or_get_app go --version
 cd resh-custom || exit 1
 "$HOME"/bin/run_or_get_app make install
