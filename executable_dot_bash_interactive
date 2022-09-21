@@ -223,10 +223,10 @@ alias forget='history -d $((HISTCMD - 1))'                                # Forg
 [ -f "$HOME/liquidprompt/liquidprompt" ] && . "$HOME/liquidprompt/liquidprompt"
 # Make stderr red
 if [ -f "$HOME/lib/libstderred.so" ]; then
-  export LD_PRELOAD="$HOME/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
+  export LD_PRELOAD="$HOME/lib/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
 elif [ ! -f "$HOME/.stderred_failed" ]; then
   if "$HOME/bin/install_stderred"; then
-    export LD_PRELOAD="$HOME/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
+    export LD_PRELOAD="$HOME/lib/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
   else
     touch "$HOME/.stderred_failed"
   fi
