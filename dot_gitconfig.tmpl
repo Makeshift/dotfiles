@@ -158,42 +158,11 @@
     # Make `git push` push relevant annotated tags when pushing branches out.
     followTags = true
 
-# URL shorthands
-#
-[url "git@github.com:"]
-
-insteadOf = https://github.com/
-pushInsteadOf = "github:"
-pushInsteadOf = "git://github.com/"
-
-[url "git://github.com/"]
-
-insteadOf = "github:"
-
-[url "git@gist.github.com:"]
-
-insteadOf = "gst:"
-pushInsteadOf = "gist:"
-pushInsteadOf = "git://gist.github.com/"
-
-[url "git://gist.github.com/"]
-
-insteadOf = "gist:"
-
-## Enforce SSH
-[url "ssh://git@github.com/"]
-  insteadOf = https://github.com/
-[url "ssh://git@gitlab.com/"]
-  insteadOf = https://gitlab.com/
-[url "ssh://git@bitbucket.org/"]
-  insteadOf = https://bitbucket.org/
-
 [pull]
 	rebase = true
 [user]
     email = git@connor-bell.com
     name = Connor Bell (Makeshift)
-	signingkey = 46799BD3EFAA2305
 
 [init]
     templateDir = "~/.git-template"
