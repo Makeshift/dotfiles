@@ -39,8 +39,9 @@ Options:
   -i | --ignore-from <PATH> - Ignore the given file, if it exists, when looking for paths to run applications from (Can be specified multiple times, defaults to the dir of this script)
   -d | --debug        Print debug information directly to TTY
 EOF
-
+#set -x
 IGNORE_FROM=("$(dirname "$0")")
+BINARY_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
   -h | --help)
@@ -62,7 +63,7 @@ while [[ $# -gt 0 ]]; do
   *)
     BINARY="$1"
     shift
-    BINARY_ARGS="$*"
+    BINARY_ARGS=("$@")
     break
     ;;
   esac
@@ -248,11 +249,25 @@ function handle_yum_installer() {
   sudo yum install -y "$installer_value"
 }
 
+# Some might object to me using 'which' here, because it's slow. That's true, but it outputs the format I need faster than I can format type's format.
+# Benchmarked using hyperfine
+# Benchmark 1: which -a exa
+#   Time (mean ± σ):      51.5 ms ±   5.9 ms    [User: 8.8 ms, System: 3.4 ms]
+#   Range (min … max):    42.2 ms …  67.7 ms    100 runs
+
+# Benchmark 1: type -fa exa
+#   Time (mean ± σ):      54.6 ms ±   5.3 ms    [User: 8.1 ms, System: 4.6 ms]
+#   Range (min … max):    42.4 ms …  69.1 ms    100 runs
+
+# Benchmark 1: type -a exa
+#   Time (mean ± σ):      53.0 ms ±   6.7 ms    [User: 6.9 ms, System: 5.0 ms]
+#   Range (min … max):    41.9 ms …  76.6 ms    100 runs
+
 function call_binary() {
   local program_name="$1"
-  local args="$2"
-  local secondrun="$3"
-  debug "Want to run: $program_name $args"
+  local secondrun="$2"
+  local -n args="$3"
+  debug "Want to run: $program_name ${args[*]}"
   local executables_on_path
   executables_on_path=$(which -a "$program_name")
   debug "Matching executables on path: ${executables_on_path[*]}"
@@ -269,7 +284,7 @@ function call_binary() {
   elif [ -z "$first_result" ]; then
     stderr "Could not find $program_name on path, attempting to install"
     if get_binary "$program_name"; then
-      call_binary "$program_name" "$args" true
+      call_binary "$program_name" true "${args[@]}"
     else
       err "Could not install $program_name"
       exit 1
@@ -288,4 +303,4 @@ if [ -z "$BINARY" ]; then
   exit 1
 fi
 
-call_binary "$BINARY" "${BINARY_ARGS}"
+call_binary "$BINARY" false BINARY_ARGS

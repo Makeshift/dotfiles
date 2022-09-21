@@ -1,0 +1,23 @@
+#!/bin/bash
+# Calculates the average time it takes to run a command by running it 100 times
+tmpfile=$(mktemp)
+# I would have used BASH's inbuilt rather than the time command, since it's slightly more precise, but it's really finnicky.
+# Also, setting TIMEFORMAT appears to make it round down to 0 a lot, losing precision
+# Example:
+# ± time which -a exa
+# /home/connor/bin/exa
+# /usr/local/bin/exa
+# real 0.158 user 0.041 sys 0.030
+# ± TIMEFORMAT="real %3R user %3U sys %3S"; time which -a exa
+# /home/connor/bin/exa
+# /usr/local/bin/exa
+# real 0.055 user 0.000 sys 0.013
+# So fuck it, /usr/bin/time is good enough
+
+for x in {1..100}; do
+  command time -f "real %e user %U sys %S" -a -o "$tmpfile" "$@" >/dev/null 2>&1
+  tail -1 "$tmpfile"
+done
+
+awk '{ et += $2; ut += $4; st += $6; count++ } END {  printf "Average:\nreal %.5f user %.5f sys %.5f\n", et/count, ut/count, st/count }' "$tmpfile"
+rm "$tmpfile"
