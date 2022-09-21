@@ -1,0 +1,16 @@
+#!/bin/bash
+
+export x86_64_make_INSTALLER_APT="make"
+export armv7l_make_INSTALLER_APT="make"
+export aarch64_make_INSTALLER_APT="make"
+export armhf_make_INSTALLER_APT="make"
+export x86_64_git_INSTALLER_APT="git"
+export armv7l_git_INSTALLER_APT="git"
+export aarch64_git_INSTALLER_APT="git"
+export armhf_git_INSTALLER_APT="git"
+
+tmpdir=$(mktemp -d)
+cd "$tmpdir" || exit 1
+"$HOME"/bin/run_or_get_app git clone https://github.com/Makeshift/resh-custom.git
+cd resh-custom || exit 1
+"$HOME"/bin/run_or_get_app make install

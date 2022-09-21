@@ -209,7 +209,7 @@ alias forget='history -d $((HISTCMD - 1))'                                # Forg
 ###### Interactive Imports ######
 # RESH - enhanced shell
 # shellcheck source=/home/connor/.resh/shellrc
-[ -f "$HOME/.resh/shellrc" ] && . "$HOME/.resh/shellrc"
+[ -f "$HOME/.resh/shellrc" ] && . "$HOME/.resh/shellrc" || echo "RESH not installed, run 'install_resh' to install"
 # shellcheck source=/home/connor/.bash-preexec.sh
 [ -f "$HOME/.bash-preexec.sh" ] && . "$HOME/.bash-preexec.sh"
 # Quick Command-line File Completion, hit ctrl+f to open a nice file browser TODO: Replace file tab-completion with QFC
@@ -220,7 +220,11 @@ alias forget='history -d $((HISTCMD - 1))'                                # Forg
 [ -f "$HOME/.local/bin/bashmarks.sh" ] && . "$HOME/.local/bin/bashmarks.sh"
 # Liquidprompt, pretty context-aware prompt
 # shellcheck source=/home/connor/liquidprompt/liquidprompt
-[ -f "$HOME/liquidprompt/liquidprompt" ] && . "$HOME/liquidprompt/liquidprompt"
+if [ -f "$HOME/liquidprompt/liquidprompt" ]; then
+  if [ -z "$LIQUIDPROPMT_LAUNCHED_BY_PROFILE" ]; then
+    . "$HOME/liquidprompt/liquidprompt"
+  fi
+fi
 # Make stderr red
 if [ -f "$HOME/lib/libstderred.so" ]; then
   export LD_PRELOAD="$HOME/lib/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
@@ -236,7 +240,11 @@ if command -v chezmoi >/dev/null; then . <(chezmoi completion bash); fi
 
 ##### Neofetch to show system summary #####
 
-if command -v neofetch >/dev/null; then neofetch; fi
+if command -v neofetch >/dev/null; then
+  if [ -z "$NEOFETCH_LAUNCHED_BY_PROFILE" ]; then
+    neofetch
+  fi
+fi
 
 #### Replace built-ins right at the end so other scripts don't cause issues ####
 
