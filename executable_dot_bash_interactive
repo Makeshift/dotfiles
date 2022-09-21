@@ -221,11 +221,16 @@ alias forget='history -d $((HISTCMD - 1))'                                # Forg
 # Liquidprompt, pretty context-aware prompt
 # shellcheck source=/home/connor/liquidprompt/liquidprompt
 [ -f "$HOME/liquidprompt/liquidprompt" ] && . "$HOME/liquidprompt/liquidprompt"
-# cod, shell autcomplete generator
-# shellcheck source=./bin/executable_cod
-if command -v cod >/dev/null; then . <("cod" init $$ bash); fi
 # Make stderr red
-[ -f "$HOME/bin/libstderred.so" ] && [ "$(uname -m)" == "x86_64" ] && export LD_PRELOAD="$HOME/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
+if [ -f "$HOME/lib/libstderred.so" ]; then
+  export LD_PRELOAD="$HOME/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
+elif [ ! -f "$HOME/.stderred_failed" ]; then
+  if "$HOME/bin/install_stderred"; then
+    export LD_PRELOAD="$HOME/bin/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
+  else
+    touch "$HOME/.stderred_failed"
+  fi
+fi
 # Add chezmoi completions TODO: Broken
 #if command -v chezmoi >/dev/null; then . <(chezmoi completion bash); fi
 

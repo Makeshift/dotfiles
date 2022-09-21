@@ -1,6 +1,0 @@
-#!/bin/bash
-set -a
-x86_64_fd_INSTALLER_ARCHIVE="https://github.com/sharkdp/fd/releases/download/v8.4.0/fd-v8.4.0-x86_64-unknown-linux-gnu.tar.gz"
-x86_64_fd_INSTALLER_ARCHIVE_BINARY="fd-v8.4.0-x86_64-unknown-linux-gnu/fd"
-x86_64_fd_INSTALLER_ARCHIVE_INSTALL_LOCATION="/usr/local/bin/"
-./executable_run_or_get_app -d fd "$@"

@@ -1,0 +1,15 @@
+#!/bin/bash
+if [ -f "/etc/debian_version" ]; then
+  sudo apt-get install -y build-essential cmake git
+  tmpdir=$(mktemp -d)
+  cd "$tmpdir" || exit 1
+  git clone https://github.com/sickill/stderred.git
+  cd stderred || exit 1
+  make
+  mkdir -p ~/lib
+  cp build/libstderred.so ~/lib/
+  rm -rf "$tmpdir"
+else
+  echo "This script is only for Debian based systems"
+  exit 1
+fi

@@ -7,7 +7,7 @@ Tries to run the given application with the given args, if it's not installed it
 If the -u or --update flag is given, it will try to update the application before running it using the environment variables described below.
 If the application is not installed, it will use environment variable(s) to find installers for the application
 
-Environment variables:
+Environment variables (dashes are replaced with _):
  <ARCHITECTURE>_<APPLICATION>_INSTALLER_<TYPE> = <VALUE>
   Where:
    <ARCHITECTURE> is the architecture of the machine as output by $(uname -m)
@@ -21,22 +21,27 @@ Environment variables:
  <ARCHITECTURE>_<APPLICATION>_INSTALLER_ARCHIVE_INSTALL_LOCATION = <VALUE>
     If the application is installed in an archive, this is the path to the directory where the final executable should be installed
 
+ <ARCHITECTURE>_<APPLICATION>_INSTALLER_ARCHIVE_EXTRACT_COMMAND = <VALUE>
+    The command to use to extract the archive, if not given, will try and guess (eg. tar -xzf)
+
+ <ARCHITECTURE>_<APPLICATION>_INSTALLER_BINARY_INSTALL_LOCATION = <VALUE>
+    If the application installer type is just a single binary, this is the path to the directory where the final executable should be installed
+
 Installer Types:
- - $(ARCHIVE) - A common archive, eg. a tarball, gzip, zip etc. <VALUE> is expected to be a URL.
- - $(APT) - Provided by apt. <VALUE> is expected to be the name of the package.
- - $(YUM) - Provided by yum. <VALUE> is expected to be the name of the package.
+ - ARCHIVE - A common archive, eg. a tarball, gzip, zip etc. <VALUE> is expected to be a URL.
+ - APT - Provided by apt. <VALUE> is expected to be the name of the package.
+ - YUM - Provided by yum. <VALUE> is expected to be the name of the package.
+ - BINARY - A single binary. <VALUE> is expected to be a URL.
+ - CARGO - Provided by cargo. <VALUE> is expected to be the name of the package.
 
 Options:
   -h --help
-  -u | --update       Update the application before running it
-  -i | --ignore-from  Ignore binaries from the path <PATH>, eg. where all you wrapper scripts are stored (Can be specified multiple times)
+  -i | --ignore-from <PATH> - Ignore the given file, if it exists, when looking for paths to run applications from (Can be specified multiple times, defaults to the dir of this script)
   -d | --debug        Print debug information directly to TTY
 EOF
 
-options=$(getopt -l "help,update,ignore-from,debug" -o "hui:d" -- "$@")
-eval set -- "$options"
-
-while true; do
+IGNORE_FROM=("$(dirname "$0")")
+while [[ $# -gt 0 ]]; do
   case "$1" in
   -h | --help)
     echo "$HELP"
@@ -57,7 +62,6 @@ while true; do
   *)
     BINARY="$1"
     shift
-    shift
     BINARY_ARGS="$*"
     break
     ;;
@@ -66,20 +70,20 @@ done
 
 #### Functions ####
 
-# Override echo to write directly to stderr if we have a tty
+# Override err to write directly to stderr if we have a tty
 #  because a lot of applications grab output from stdout and we don't want to
 #  pollute it
-function echo() {
+function err() {
   if [ -t 1 ]; then
     stderr "$@"
   fi
 }
 
 function stderr() {
-  builtin echo "$@" >&2
+  echo "$@" >&2
 }
 
-function debug() { if [ "$DEBUG" = true ]; then echo "$@"; fi; }
+function debug() { if [ "$DEBUG" = true ]; then err "$@"; fi; }
 
 function extract() {
   if [ -f "$1" ]; then
@@ -99,34 +103,155 @@ function extract() {
     *.rar) 7z x "$1" ;;
     *.z) uncompress "$1" ;;
     *.7z) 7z x "$1" ;;
-    *) echo "'$1' cannot be extracted/mounted via extract()" ;;
+    *) err "'$1' cannot be extracted/mounted via extract()" ;;
     esac
   else
-    echo "'$1' is not a valid file!"
+    err "'$1' is not a valid file!"
   fi
 }
 
-supported_installer_types=("ARCHIVE" "APT" "YUM")
+supported_installer_types=("ARCHIVE" "BINARY" "CARGO")
+
+function make_supported_installer_types() {
+  if command -v apt >/dev/null; then
+    supported_installer_types+=("APT")
+  fi
+  if command -v yum >/dev/null; then
+    supported_installer_types+=("YUM")
+  fi
+}
+make_supported_installer_types
+function join_by() {
+  local d=${1-} f=${2-}
+  if shift 2; then
+    printf %s "$f" "${@/#/$d}"
+  fi
+}
+
+function install_from_pkg_if_not_installed() {
+  if ! command -v "$1" >/dev/null; then
+    if command -v apt >/dev/null; then
+      sudo apt-get install -y "$1"
+    fi
+    if command -v yum >/dev/null; then
+      sudo yum install -y "$1"
+    fi
+  fi
+}
+
+function get_installer() {
+  local architecture="$1"
+  local program_name="$2"
+  local installer_var
+  for installer_type in "${supported_installer_types[@]}"; do
+    local variable_name="${architecture}_${program_name}_INSTALLER_${installer_type}"
+    local variable_value="${!variable_name}"
+    if [ -n "$variable_value" ]; then
+      installer_var="${variable_name}"
+      break
+    fi
+  done
+  echo "$installer_var"
+}
 
 function get_binary() {
-  local program_name="$1"
-  local install_sources_prefix
-  local search_env
+  local program_name="${1/-/_}"
+  local installer_var
   local architecture
   architecture="$(uname -m)"
-  search_env="${architecture}_${program_name}_INSTALLER_"
-  install_sources_prefix=$(printenv | grep "$search_env" | grep -f "${supported_installer_types[@]}" | head -n1)
-  if [ -z "$install_sources_prefix" ]; then
-    echo "No install sources found for $program_name for architecture $(uname -m)"
+  installer_var="$(get_installer "$architecture" "$program_name")"
+  if [ -z "$installer_var" ]; then
+    err "No install sources found for $program_name for architecture $(uname -m)"
     exit 1
   fi
-  installer_type="${install_sources_prefix#*_INSTALLER_}"
-  handle_installer_type "$installer_type" "$program_name"
+  installer_type="${installer_var#*_INSTALLER_}"
+  handle_installer_type "$installer_type" "${installer_var}" "${!installer_var}"
+}
+
+function handle_installer_type() {
+  local installer_type="$1"
+  local installer_var="$2"
+  local installer_value="$3"
+  case "$installer_type" in
+  ARCHIVE)
+    handle_archive_installer "$installer_var" "$installer_value"
+    ;;
+  APT)
+    handle_apt_installer "$installer_var" "$installer_value"
+    ;;
+  YUM)
+    handle_yum_installer "$installer_var" "$installer_value"
+    ;;
+  BINARY)
+    handle_binary_installer "$installer_var" "$installer_value"
+    ;;
+  CARGO)
+    handle_cargo_installer "$installer_var" "$installer_value"
+    ;;
+  *)
+    err "Unsupported installer type: $installer_type"
+    exit 1
+    ;;
+  esac
+}
+
+function handle_cargo_installer() {
+  local installer_var="$1"
+  local installer_value="$2"
+  local program_name="${installer_var%_*}"
+  program_name="${program_name#*_}"
+  install_from_pkg_if_not_installed cargo
+  cargo install "$installer_value"
+}
+
+function handle_binary_installer() {
+  local installer_var="$1"
+  local installer_value="$2"
+  local binary_install_location_var="${installer_var%_INSTALLER_*}_INSTALLER_BINARY_INSTALL_LOCATION"
+  local binary_install_location="${!binary_install_location_var}"
+  if [ -z "$binary_install_location" ]; then
+    err "No binary install location found for $installer_var"
+    exit 1
+  fi
+  sudo curl -L "$installer_value" -o "$binary_install_location"
+  sudo chmod +x "$binary_install_location"
+}
+
+function handle_archive_installer() {
+  local installer_var="$1"
+  local installer_value="$2"
+  local binary_path_var="${installer_var}_BINARY"
+  local install_path_var="${installer_var}_INSTALL_LOCATION"
+  local extract_command_var="${installer_var}_EXTRACT_COMMAND"
+  local binary_path="${!binary_path_var}"
+  local install_path="${!install_path_var}"
+  local extract_command="${!extract_command_var}"
+  local tmpdir
+  tmpdir="$(mktemp -d)"
+  cd "$tmpdir" || exit 1
+  curl -L "$installer_value" -o archive >/dev/null || exit 1
+  $extract_command archive || exit 1
+  sudo cp "$binary_path" "$install_path" || exit 1
+  sudo chmod +x "$install_path" || exit 1
+  err "Installed $binary_path to $install_path"
+  cd - || exit 1
+  rm -rf "$tmpdir"
+}
+function handle_apt_installer() {
+  local installer_var="$1"
+  local installer_value="$2"
+  sudo apt-get install -y "$installer_value"
+}
+function handle_yum_installer() {
+  local installer_var="$1"
+  local installer_value="$2"
+  sudo yum install -y "$installer_value"
 }
 
 function call_binary() {
   local program_name="$1"
   local args="$2"
+  local secondrun="$3"
   debug "Want to run: $program_name $args"
   local executables_on_path
   executables_on_path=$(which -a "$program_name")
@@ -138,10 +263,17 @@ function call_binary() {
   done
   first_result=$(echo "$executables_on_path" | head -n 1)
   debug "First matching executable: $first_result"
-  if [ -z "$first_result" ]; then
+  if [ -z "$first_result" ] && [ "$secondrun" == "true" ]; then
+    err "We tried to install but still didn't find $program_name on path. Exiting."
+    exit 1
+  elif [ -z "$first_result" ]; then
     stderr "Could not find $program_name on path, attempting to install"
-    get_binary "$program_name"
-    call_binary "$program_name" "$args"
+    if get_binary "$program_name"; then
+      call_binary "$program_name" "$args" true
+    else
+      err "Could not install $program_name"
+      exit 1
+    fi
   else
     "$first_result" "${args[@]}"
   fi
@@ -152,7 +284,7 @@ function call_binary() {
 
 if [ -z "$BINARY" ]; then
   stderr "No binary specified"
-  echo "$HELP"
+  err "$HELP"
   exit 1
 fi
 
