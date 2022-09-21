@@ -163,12 +163,14 @@
 [user]
     email = git@connor-bell.com
     name = Connor Bell (Makeshift)
-	signingkey = 46799BD3EFAA2305
+	signingkey = {{ .gitconfig_user_signingkey }}
 
 [init]
     templateDir = "~/.git-template"
 [commit]
+{{- if .gitconfig_user_signingkey }}
 	gpgsign = true
+{{- end }}
 [submodule]
 	recurse = true
 [filter "lfs"]

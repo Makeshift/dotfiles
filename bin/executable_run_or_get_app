@@ -63,7 +63,7 @@ while [[ $# -gt 0 ]]; do
   *)
     BINARY="$1"
     shift
-    BINARY_ARGS=("$@")
+    BINARY_ARGS+=("$@")
     break
     ;;
   esac
