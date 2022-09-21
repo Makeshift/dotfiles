@@ -1,3 +1,0 @@
-#/bin/bash
-ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N '' -C "${USER}@$(cat /proc/sys/kernel/hostname)"
-\cat ~/.ssh/id_rsa.pub

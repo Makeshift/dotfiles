@@ -1,0 +1,8 @@
+#!/bin/bash
+keyid=$(gpg --batch --passphrase '' --quick-generate-key "${USER} <${USER}@$(cat /proc/sys/kernel/hostname).$(date +%s)>" future-default cert never 2>&1 | grep "marked as ultimately trusted" | cut -d' ' -f 3)
+gpg --list-secret-keys --keyid-format LONG "$keyid"
+echo "------------------------"
+echo "https://github.com/settings/gpg/new"
+echo "> ~/.config/chezmoi/chezmoi.toml"
+echo "[data]"
+echo "    gitconfig_user_signingkey = $keyid"

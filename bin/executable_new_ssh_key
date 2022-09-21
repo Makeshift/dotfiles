@@ -1,0 +1,7 @@
+#!/bin/bash
+output="${1-~/.ssh/id_rsa}"
+ssh-keygen -q -t ed25519 -f "$output" -N '' -C "${USER}@$(cat /proc/sys/kernel/hostname)"
+echo "------------------"
+\cat ~/.ssh/id_rsa.pub
+echo "------------------"
+echo "https://github.com/settings/ssh/new"

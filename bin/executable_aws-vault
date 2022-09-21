@@ -12,4 +12,4 @@ aarch64_aws_vault_INSTALLER_BINARY_INSTALL_LOCATION="/usr/local/bin/aws-vault"
 armhf_aws_vault_INSTALLER_BINARY="$aarch64_aws_vault_INSTALLER_BINARY"
 armhf_aws_vault_INSTALLER_BINARY_INSTALL_LOCATION="$aarch64_aws_vault_INSTALLER_BINARY_INSTALL_LOCATION"
 
-$HOME/bin/run_or_get_app aws_vault "$@"
+"$HOME"/bin/run_or_get_app aws-vault "$@"
