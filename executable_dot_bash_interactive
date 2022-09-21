@@ -232,7 +232,7 @@ elif [ ! -f "$HOME/.stderred_failed" ]; then
   fi
 fi
 # Add chezmoi completions TODO: Broken
-#if command -v chezmoi >/dev/null; then . <(chezmoi completion bash); fi
+if command -v chezmoi >/dev/null; then . <(chezmoi completion bash); fi
 
 ##### Neofetch to show system summary #####
 
@@ -303,3 +303,9 @@ alias df='df -H'                 # Makes df human readable by default
 alias rm='rm -I --preserve-root' # Prompt if removing more than 3 files or if recursive, also don't let me delete root
 alias wget='wget -c'             # Allows me to resume wget downloads
 alias less="less -r"             # Interpret colours with less
+
+if [[ "$HOSTNAME" == "enigma" ]]; then
+  chezmoi apply 2>&1 | grep -v "config file template has changed"
+else
+  chezmoi update 2>&1 | grep -v "config file template has changed"
+fi
