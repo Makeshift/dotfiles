@@ -163,12 +163,14 @@
 [user]
     email = git@connor-bell.com
     name = Connor Bell (Makeshift)
+{{- if not (empty .gitconfig_user_signingkey) }}
 	signingkey = {{ .gitconfig_user_signingkey }}
+{{- end }}
 
 [init]
     templateDir = "~/.git-template"
 [commit]
-{{- if .gitconfig_user_signingkey }}
+{{- if not (empty .gitconfig_user_signingkey) }}
 	gpgsign = true
 {{- end }}
 [submodule]
