@@ -307,5 +307,5 @@ alias less="less -r"             # Interpret colours with less
 if [[ "$HOSTNAME" == "enigma" ]]; then
   chezmoi apply 2>&1 | grep -v "config file template has changed"
 else
-  chezmoi update 2>&1 | grep -v "config file template has changed"
+  chezmoi update 2>&1 | grep -v "config file template has changed" | grep -v "Already up to date" | grep -v "is up to date"
 fi
