@@ -152,7 +152,7 @@ export DOCKER_BUILDKIT=1
 # AWS_VAULT_FILE_PASSPHRASE
 # AWS_PROFILE
 
-export TERRAGRUNT_DOWNLOAD="~/.terragrunt-cache"
+export TERRAGRUNT_DOWNLOAD="${HOME}/.terragrunt-cache"
 export AWS_VAULT_FILE_PASSPHRASE="supersecretpassword" # Set this to something unique, it's used to encrypt your AWS credentials.
 export AWS_VAULT_BACKEND=file
 export AWS_PROFILE=iea
