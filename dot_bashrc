@@ -187,12 +187,15 @@ debug "First matching executable not including current script path: $actual_prog
 vault_exe=$(command -v aws-vault)
 if [ -n "$AWS_VAULT" ]; then
   debug "Env var AWS_VAULT is set, so vault has probably already been ran, not running again"
-  final_exec="$actual_program $*"
-else
-  final_exec="${vault_exe} exec --duration=${AWS_VAULT_SESSION_TIME_HOURS-8}h ${AWS_PROFILE} -- ${actual_program} $*"
-fi
-debug "Final command: $final_exec"
-eval "$final_exec"
+    program="$actual_program"
+      args=("$@")
+    else
+      program="${vault_exe}"
+        args=("exec" "--duration=${AWS_VAULT_SESSION_TIME_HOURS-8}h" "${AWS_PROFILE}" "--" "${actual_program}")
+          args+=("$@")
+        fi
+        debug "Final command: $program ${args[*]}"
+        "$program" "${args[@]}"
 SHELLSCRIPT
 chmod +x "$AWS_PROGRAMS_TARGET_PATH/vaultify"
 # This function creates a new wrapper script in $AWS_PROGRAMS_TARGET_PATH, which by default is $HOME/.aws/bin which we add to the PATH before
