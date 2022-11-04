@@ -1,0 +1,3 @@
+#!/bin/bash
+sudo sh -c 'sysctl fs.inotify.max_user_watches=524288 && sysctl -p'
+aws-vault exec iea --duration=12h -- code

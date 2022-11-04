@@ -153,11 +153,10 @@ export DOCKER_BUILDKIT=1
 # AWS_PROFILE
 
 export TF_DATA_DIR="$HOME/.terraform.d/"
-export TF_PLUGIN_CACHE_DIR="$HOME/.terraform.d/plugin-cache"
-export TERRAGRUNT_DOWNLOAD="$HOME/.terraform.d/terragrunt-cache"
+export TERRAGRUNT_DOWNLOAD="$HOME/.terraform.d/"
 export TERRAGRUNT_SOURCE_UPDATE=true
-export TERRAGRUNT_FETCH_DEPENDENCY_OUTPUT_FROM_STATE=true
-export TERRAGRUNT_USE_PARTIAL_PARSE_CONFIG_CACHE=true
+#export TERRAGRUNT_FETCH_DEPENDENCY_OUTPUT_FROM_STATE=true
+#export TERRAGRUNT_USE_PARTIAL_PARSE_CONFIG_CACHE=true
 export AWS_VAULT_FILE_PASSPHRASE="supersecretpassword" # Set this to something unique, its used to encrypt your AWS credentials.
 export AWS_VAULT_BACKEND=file
 export AWS_PROFILE=iea
@@ -192,15 +191,15 @@ debug "First matching executable not including current script path: $actual_prog
 vault_exe=$(command -v aws-vault)
 if [ -n "$AWS_VAULT" ]; then
   debug "Env var AWS_VAULT is set, so vault has probably already been ran, not running again"
-    program="$actual_program"
-      args=("$@")
-    else
-      program="${vault_exe}"
-        args=("exec" "--duration=${AWS_VAULT_SESSION_TIME_HOURS-8}h" "${AWS_PROFILE}" "--" "${actual_program}")
-          args+=("$@")
-        fi
-        debug "Final command: $program ${args[*]}"
-        "$program" "${args[@]}"
+  program="$actual_program"
+  args=("$@")
+else
+  program="${vault_exe}"
+  args=("exec" "--duration=${AWS_VAULT_SESSION_TIME_HOURS-8}h" "${AWS_PROFILE}" "--" "${actual_program}")
+  args+=("$@")
+fi
+debug "Final command: $program ${args[*]}"
+"$program" "${args[@]}"
 SHELLSCRIPT
 chmod +x "$AWS_PROGRAMS_TARGET_PATH/vaultify"
 # This function creates a new wrapper script in $AWS_PROGRAMS_TARGET_PATH, which by default is $HOME/.aws/bin which we add to the PATH before
@@ -218,6 +217,10 @@ for program in "${vaultify_programs[@]}"; do
 done
 
 export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
 
 # If we're in an interactive shell, run a script specifically for that
 # shellcheck source=./executable_dot_bash_interactive
