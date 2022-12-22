@@ -108,6 +108,7 @@ alias vim='$EDITOR'
 alias vi='$EDITOR'
 
 #### Global aliases ####
+alias docker-compose='docker compose' # This one is going to bug me for a while
 alias get_numerical_permissions='stat --format "%a"'
 alias chown='chown --preserve-root' # Don't let me mess up root
 alias chmod='chmod --preserve-root' # Don't let me mess up root
@@ -152,8 +153,8 @@ export DOCKER_BUILDKIT=1
 # AWS_VAULT_FILE_PASSPHRASE
 # AWS_PROFILE
 
-export TF_DATA_DIR="$HOME/.terraform.d/"
-export TERRAGRUNT_DOWNLOAD="$HOME/.terraform.d/"
+#export TF_DATA_DIR="$HOME/.terraform.d/"
+#export TERRAGRUNT_DOWNLOAD="."
 export TERRAGRUNT_SOURCE_UPDATE=true
 #export TERRAGRUNT_FETCH_DEPENDENCY_OUTPUT_FROM_STATE=true
 #export TERRAGRUNT_USE_PARTIAL_PARSE_CONFIG_CACHE=true
