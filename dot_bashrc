@@ -73,68 +73,6 @@ if [[ "$(uname -r)" =~ "microsoft" ]]; then
   ssh-add >/dev/null 2>&1
 fi
 
-#### Shell Options ####
-shopt -s checkwinsize # Resize the window after every command
-shopt -s histappend   # Appends to the history file rather than overwriting it
-shopt -s cmdhist      # Combine multiline commands into one in history
-shopt -s nocaseglob   # Match filenames without regard to case
-shopt -s nocasematch  # Match patterns without regard to case
-shopt -s cdspell      # Fixes typos when cd'ing
-shopt -s dirspell     # Fixes typos when using dirs
-shopt -s globstar     # Allows you to use ** in pathnames
-# Ignore duplicates, ls without options and builtin commands
-HISTCONTROL=ignoredups:erasedups:ignorespace
-# History between multiple sessions (but breaks command numbers, meh)
-export PROMPT_COMMAND="history -a; history -c; history -r; ${PROMPT_COMMAND}"
-export HISTIGNORE="&:ls:[bf]g:exit"
-export HISTTIMEFORMAT='%F %T '
-
-#### Editors ####
-# Editor preference order
-# Also skip micro if we're in the vscode terminal because vscode eats keybinds
-if command -v micro >/dev/null && [ "$TERM_PROGRAM" != "vscode" ]; then
-  export EDITOR=micro
-elif command -v nano >/dev/null; then
-  export EDITOR=nano
-elif command -v vim >/dev/null; then
-  export EDITOR=vim
-elif command -v vi >/dev/null; then
-  export EDITOR=vi
-fi
-
-alias micro='$EDITOR'
-alias nano='$EDITOR'
-alias vim='$EDITOR'
-alias vi='$EDITOR'
-
-#### Global aliases ####
-alias docker-compose='docker compose' # This one is going to bug me for a while
-alias get_numerical_permissions='stat --format "%a"'
-alias chown='chown --preserve-root' # Don't let me mess up root
-alias chmod='chmod --preserve-root' # Don't let me mess up root
-alias chgrp='chgrp --preserve-root' # Don't let me mess up root
-alias tf=terraform                  # Terraform
-alias tg=terragrunt                 # Terragrunt
-alias rm='rm --preserve-root'       # Overwritten in .bash_interactive if interactive
-alias python='python3'              # I literally never want python2 by accident
-alias t='tail -f 2>&1 /dev/null'    # Just keeps a session going
-# Override 'chezmoi cd' to go to the chezmoi dir instead of launching a new shell
-function chezmoi() {
-  if [[ "$1" == "cd" ]]; then
-    cd "$(command chezmoi source-path)"
-  else
-    command chezmoi "$@"
-  fi
-}
-# Add an 'apt whatprovides' command, because I constantly forget apt doesn't have whatprovides
-function apt() {
-  if [[ "$1" == "whatprovides" ]]; then
-    apt-file search "${@:2}"
-  else
-    apt-get "$@"
-  fi
-}
-
 #### Global Functions ####
 # Gets $SHOUTRRR_TELEGRAM_CHAT_URI from .bash_secret
 function telegram() {
@@ -156,9 +94,9 @@ export DOCKER_BUILDKIT=1
 #export TF_DATA_DIR="$HOME/.terraform.d/"
 #export TERRAGRUNT_DOWNLOAD="."
 export TERRAGRUNT_SOURCE_UPDATE=true
-#export TERRAGRUNT_FETCH_DEPENDENCY_OUTPUT_FROM_STATE=true
-#export TERRAGRUNT_USE_PARTIAL_PARSE_CONFIG_CACHE=true
-export AWS_VAULT_FILE_PASSPHRASE="supersecretpassword" # Set this to something unique, its used to encrypt your AWS credentials.
+export TERRAGRUNT_FETCH_DEPENDENCY_OUTPUT_FROM_STATE=true
+export TERRAGRUNT_USE_PARTIAL_PARSE_CONFIG_CACHE=true
+export TF_PLUGIN_CACHE_DIR=~/.terraform-cache
 export AWS_VAULT_BACKEND=file
 export AWS_PROFILE=iea
 
