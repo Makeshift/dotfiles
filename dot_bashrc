@@ -1,4 +1,7 @@
 #!/bin/bash
+# Get execution time of each command
+export PS4='+[${SECONDS}s][${BASH_SOURCE}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'; set -x;
+
 ###### Source vars we don't sync to git ######
 # shellcheck source=/home/connor/.bash_secret
 [ -f .bash_secret ] && . "$HOME/.bash_secret"

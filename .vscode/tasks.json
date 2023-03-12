@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Chezmoi Apply",
+      "type": "shell",
+      "command": "chezmoi apply"
+    },
+    {
+      "label": "Chezmoi Update from Remote",
+      "type": "shell",
+      "command": "chezmoi update"
+    },
+    {
+      "label": "Chezmoi Commit",
+      "type": "shell",
+      "command": "chezmoi cd && chezmoi git add . && chezmoi git commit -m \"Update\" && chezmoi git push"
+    }
+  ]
+}
