@@ -16,11 +16,11 @@ set output-meta on
 set convert-meta off
 
 # Enable bash programmable completion features in interactive shells
-if [ -f /usr/share/bash-completion/bash_completion ]; then
-  . /usr/share/bash-completion/bash_completion
-elif [ -f /etc/bash_completion ]; then
-  . /etc/bash_completion
-fi
+# if [ -f /usr/share/bash-completion/bash_completion ]; then
+#   . /usr/share/bash-completion/bash_completion &
+# elif [ -f /etc/bash_completion ]; then
+#   . /etc/bash_completion &
+# fi
 
 stty -ixon # disables ctrl+s and ctrl+q from scroll locking
 
@@ -91,7 +91,7 @@ alias t='tail -f 2>&1 /dev/null'    # Just keeps a session going
 # Override 'chezmoi cd' to go to the chezmoi dir instead of launching a new shell
 function chezmoi() {
   if [[ "$1" == "cd" ]]; then
-    cd "$(command chezmoi source-path)"
+    cd "$(command chezmoi source-path)" || exit
   else
     command chezmoi "$@"
   fi
@@ -298,15 +298,7 @@ elif [ ! -f "$HOME/.stderred_failed" ]; then
   fi
 fi
 # Add chezmoi completions TODO: Broken
-if command -v chezmoi >/dev/null; then . <(chezmoi completion bash); fi
-
-##### Neofetch to show system summary #####
-
-if command -v neofetch >/dev/null; then
-  if [ -z "$NEOFETCH_LAUNCHED_BY_PROFILE" ]; then
-    neofetch
-  fi
-fi
+# if command -v chezmoi >/dev/null; then . <(chezmoi completion bash); fi
 
 #### Replace built-ins right at the end so other scripts don't cause issues ####
 
@@ -379,3 +371,16 @@ alias less="less -r"             # Interpret colours with less
 # else
 #   chezmoi update 2>&1 | grep -v "config file template has changed" | grep -v "Already up to date" | grep -v "is up to date"
 # fi
+
+##### Neofetch to show system summary #####
+
+if command -v neofetch >/dev/null; then
+  if [ -z "$NEOFETCH_LAUNCHED_BY_PROFILE" ]; then
+    neofetch
+  fi
+fi
+
+# Check if we're in vscode, call our interactive script followed by its init script if we need to
+if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+  . "/home/connor/.vscode-server/bin/ee2b180d582a7f601fa6ecfdad8d9fd269ab1884/out/vs/workbench/contrib/terminal/browser/media/shellIntegration-bash.sh" # $(code --locate-shell-integration-path bash)"
+fi

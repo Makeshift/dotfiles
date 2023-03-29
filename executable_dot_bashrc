@@ -1,13 +1,15 @@
 #!/bin/bash
 # Get execution time of each command
-export PS4='+[${SECONDS}s][${BASH_SOURCE}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'; set -x;
+# N=$(date +%s%N)
+# export PS4='+[$(((`date +%s%N`-$N)/1000000))ms][${BASH_SOURCE}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+# set -x
 
 ###### Source vars we don't sync to git ######
 # shellcheck source=/home/connor/.bash_secret
-[ -f .bash_secret ] && . "$HOME/.bash_secret"
+[ -f "$HOME/.bash_secret" ] && . "$HOME/.bash_secret"
 
 #### General PATH stuff and imports ####
-PATH="$HOME/bin:$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:/usr/local/go/bin:$PATH"
+PATH="$HOME/bin:$HOME/bin/wrappers:$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:/usr/local/go/bin:$PATH"
 
 # NPM / NVM
 if command -v nvm >/dev/null; then
@@ -68,12 +70,6 @@ fix_wsl2_interop() {
 if [[ "$(uname -r)" =~ "microsoft" ]]; then
   export os=wsl
   fix_wsl2_interop
-
-  [ -z "$(ps -ef | grep cron | grep -v grep)" ] && sudo /etc/init.d/cron start >/dev/null
-  sudo service duplicati start >/dev/null
-  sudo service docker start >/dev/null
-  eval "$(ssh-agent)" >/dev/null 2>&1
-  ssh-add >/dev/null 2>&1
 fi
 
 #### Global Functions ####
@@ -99,6 +95,7 @@ export DOCKER_BUILDKIT=1
 export TERRAGRUNT_SOURCE_UPDATE=true
 export TERRAGRUNT_FETCH_DEPENDENCY_OUTPUT_FROM_STATE=true
 export TERRAGRUNT_USE_PARTIAL_PARSE_CONFIG_CACHE=true
+export NODE_OPTIONS=--max_old_space_size=16384
 #export TF_PLUGIN_CACHE_DIR=~/.terraform-cache
 export AWS_VAULT_BACKEND=file
 export AWS_PROFILE=iea
@@ -160,10 +157,14 @@ done
 
 export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
 
-export PYENV_ROOT="$HOME/.pyenv"
-command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+# export PYENV_ROOT="$HOME/.pyenv"
+# command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+# eval "$(pyenv init -)"
 
 # If we're in an interactive shell, run a script specifically for that
 # shellcheck source=./executable_dot_bash_interactive
-[[ $- == *i* ]] && [ -f .bash_interactive ] && . "$HOME/.bash_interactive"
+if [[ -f "$HOME/.bash_interactive" ]]; then
+  if [[ $- == *i* ]]; then
+    . "$HOME/.bash_interactive"
+  fi
+fi

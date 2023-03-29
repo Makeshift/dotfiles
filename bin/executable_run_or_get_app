@@ -1,4 +1,5 @@
 #!/bin/bash
+
 read -r -d '' HELP <<"EOF"
 Usage: run_or_get_app [-h | --help] [-d | --debug] [-u | --update] [-i | --ignore-from <PATH>] <APPLICATION> [ARGS]...
 
@@ -7,25 +8,30 @@ Tries to run the given application with the given args, if it's not installed it
 If the -u or --update flag is given, it will try to update the application before running it using the environment variables described below.
 If the application is not installed, it will use environment variable(s) to find installers for the application
 
-Environment variables (dashes are replaced with _):
- <ARCHITECTURE>_<APPLICATION>_INSTALLER_<TYPE> = <VALUE>
+Environment variables (- are replaced with _):
+ <ARCHITECTURE>_<APPLICATION>_INSTALLER_<TYPE>=<VALUE>
   Where:
-   <ARCHITECTURE> is the architecture of the machine as output by $(uname -m)
+   <ARCHITECTURE> is the architecture of the machine as output by $(uname -m). eg. x86_64, armv7l, aarch64, armhf.
+      Alternatively, if the application is architecture independent, use 'all'
    <APPLICATION> is the name of the binary
    <TYPE> is the type of installer, see 'Installer Types' below
    <VALUE> is the the value to use, dependent on installer type
+   Examples:
+    x86_64_rg_INSTALLER_APT = ripgrep
+    armv7l_rg_INSTALLER_APT = ripgrep
+    aarch64_rg_INSTALLER_YUM = ripgrep
+    armhf_rg_INSTALLER_EGET = BurntSushi/ripgrep
+    all_rg_INSTALLER_APT = ripgrep
+    x86_64_rg_INSTALLER_ARCHIVE = "https://github.com/BurntSushi/ripgrep/releases/download/13.0.0/ripgrep-13.0.0-x86_64-unknown-linux-musl.tar.gz"
 
- <ARCHITECTURE>_<APPLICATION>_INSTALLER_ARCHIVE_BINARY = <VALUE>
+ <ARCHITECTURE>_<APPLICATION>_INSTALLER_ARCHIVE_BINARY=<VALUE>
    If the application is installed in an archive, this is the path to the binary once the archive is extracted (relative to the archive)
 
- <ARCHITECTURE>_<APPLICATION>_INSTALLER_ARCHIVE_INSTALL_LOCATION = <VALUE>
-    If the application is installed in an archive, this is the path to the directory where the final executable should be installed
-
- <ARCHITECTURE>_<APPLICATION>_INSTALLER_ARCHIVE_EXTRACT_COMMAND = <VALUE>
+ <ARCHITECTURE>_<APPLICATION>_INSTALLER_ARCHIVE_EXTRACT_COMMAND=<VALUE>
     The command to use to extract the archive, if not given, will try and guess (eg. tar -xzf)
 
- <ARCHITECTURE>_<APPLICATION>_INSTALLER_BINARY_INSTALL_LOCATION = <VALUE>
-    If the application installer type is just a single binary, this is the path to the directory where the final executable should be installed
+ EXECUTABLE_FINAL_PATH=<PATH>
+   The path to install the application to. Defaults to $HOME/.local/bin
 
 Installer Types:
  - ARCHIVE - A common archive, eg. a tarball, gzip, zip etc. <VALUE> is expected to be a URL.
@@ -33,14 +39,27 @@ Installer Types:
  - YUM - Provided by yum. <VALUE> is expected to be the name of the package.
  - BINARY - A single binary. <VALUE> is expected to be a URL.
  - CARGO - Provided by cargo. <VALUE> is expected to be the name of the package.
+ - EGET - Uses the eget utility. <VALUE> is expected to be the GitHub repo to install from, eg. BurntSushi/ripgrep
 
 Options:
   -h --help
   -i | --ignore-from <PATH> - Ignore the given file, if it exists, when looking for paths to run applications from (Can be specified multiple times, defaults to the dir of this script)
   -d | --debug        Print debug information directly to TTY
+
+The following locations should be added to your PATH, in this order:
+  - "$HOME/bin" - Early in the path, so this script is on your path
+  - "$HOME/bin/wrappers" - (Or your WRAPPERS_PATH) So the wrapper is always used to launch the application (For updating etc)
+  - "$HOME/.local/bin" - (Or your EXECUTABLE_FINAL_PATH) After the wrappers, so the wrapper is used to launch the application
+
+  Example, for bash:
+    export PATH="$HOME/bin:$HOME/bin/wrappers:$HOME/.local/bin:$PATH"
 EOF
 #set -x
+supported_installer_types=("ARCHIVE" "BINARY" "CARGO" "EGET")
+# Ignore the directory this script is in
 IGNORE_FROM=("$(dirname "$0")")
+EXECUTABLE_FINAL_PATH=${EXECUTABLE_FINAL_PATH:-"$HOME/.local/bin"}
+WRAPPERS_PATH=${WRAPPERS_PATH:-"$HOME/bin/wrappers"}
 BINARY_ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -74,6 +93,9 @@ done
 # Override err to write directly to stderr if we have a tty
 #  because a lot of applications grab output from stdout and we don't want to
 #  pollute it
+
+### Helpers ###
+
 function err() {
   if [ -t 1 ]; then
     stderr "$@"
@@ -111,17 +133,6 @@ function extract() {
   fi
 }
 
-supported_installer_types=("ARCHIVE" "BINARY" "CARGO")
-
-function make_supported_installer_types() {
-  if command -v apt >/dev/null; then
-    supported_installer_types+=("APT")
-  fi
-  if command -v yum >/dev/null; then
-    supported_installer_types+=("YUM")
-  fi
-}
-make_supported_installer_types
 function join_by() {
   local d=${1-} f=${2-}
   if shift 2; then
@@ -129,17 +140,32 @@ function join_by() {
   fi
 }
 
-function install_from_pkg_if_not_installed() {
-  if ! command -v "$1" >/dev/null; then
-    if command -v apt >/dev/null; then
-      sudo apt-get install -y "$1"
-    fi
-    if command -v yum >/dev/null; then
-      sudo yum install -y "$1"
-    fi
+function check_if_installer_type_is_useable() {
+  local installer_type="$1"
+  debug "Checking if installer type $installer_type is useable"
+  installer_type_validation_function="can_use_type_${installer_type}"
+  if ! [[ $(type -t "$installer_type_validation_function") == function ]]; then
+    err "Installer type $installer_type is not supported (no validation function $installer_type_validation_function)"
+    return 1
+  fi
+  if ! "$installer_type_validation_function"; then
+    err "Installer type $installer_type is not useable"
+    return 1
   fi
 }
 
+### Setup ###
+
+if command -v apt >/dev/null; then
+  supported_installer_types+=("APT")
+fi
+if command -v yum >/dev/null; then
+  supported_installer_types+=("YUM")
+fi
+
+### Env Var Installer Handling ###
+
+## Search for valid env vars to use for installers ##
 function get_installer() {
   local architecture="$1"
   local program_name="$2"
@@ -147,7 +173,7 @@ function get_installer() {
   for installer_type in "${supported_installer_types[@]}"; do
     local variable_name="${architecture}_${program_name}_INSTALLER_${installer_type}"
     local variable_value="${!variable_name}"
-    if [ -n "$variable_value" ]; then
+    if [ -n "$variable_value" ] && check_if_installer_type_is_useable "${installer_type}"; then
       installer_var="${variable_name}"
       break
     fi
@@ -155,6 +181,7 @@ function get_installer() {
   echo "$installer_var"
 }
 
+## Set up get_installer
 function get_binary() {
   local program_name="${1/-/_}"
   local installer_var
@@ -168,6 +195,58 @@ function get_binary() {
   installer_type="${installer_var#*_INSTALLER_}"
   handle_installer_type "$installer_type" "${installer_var}" "${!installer_var}"
 }
+
+### Look for and run if binary exists, otherwise download and run ###
+function call_binary() {
+  local program_name="$1"
+  local is_retry="$2"
+  local -n args="$3"
+  debug "Want to run: $program_name ${args[*]}"
+  local executables_on_path
+  # Some might object to me using 'which' here, because it's slow. That's true, but it outputs the format I need faster than I can format type's format.
+  # Benchmarked using hyperfine
+  # Benchmark 1: which -a exa
+  #   Time (mean ± σ):      51.5 ms ±   5.9 ms    [User: 8.8 ms, System: 3.4 ms]
+  #   Range (min … max):    42.2 ms …  67.7 ms    100 runs
+
+  # Benchmark 1: type -fa exa
+  #   Time (mean ± σ):      54.6 ms ±   5.3 ms    [User: 8.1 ms, System: 4.6 ms]
+  #   Range (min … max):    42.4 ms …  69.1 ms    100 runs
+
+  # Benchmark 1: type -a exa
+  #   Time (mean ± σ):      53.0 ms ±   6.7 ms    [User: 6.9 ms, System: 5.0 ms]
+  #   Range (min … max):    41.9 ms …  76.6 ms    100 runs
+  executables_on_path=$(which -a "$program_name")
+  debug "Matching executables on path: ${executables_on_path[*]}"
+  # For each path in IGNORE_FROM, remove it from the list of executables on path
+  for path in "${IGNORE_FROM[@]}"; do
+    debug "Removing $path from executables on path"
+    executables_on_path=$(echo "$executables_on_path" | grep -v "$path")
+  done
+  first_result=$(echo "$executables_on_path" | head -n 1)
+  debug "First matching executable: $first_result"
+  if [ -z "$first_result" ] && [ "$is_retry" == "true" ]; then
+    err "We tried to install but still didn't find $program_name on path afterwards. Exiting."
+    exit 1
+  elif [ -z "$first_result" ]; then
+    stderr "Could not find $program_name on path, attempting to install"
+    if get_binary "$program_name"; then
+      call_binary "$program_name" true "${args[@]}"
+    else
+      err "Could not install $program_name"
+      exit 1
+    fi
+  else
+    "$first_result" "${args[@]}"
+  fi
+
+}
+
+
+
+
+
+
 
 function handle_installer_type() {
   local installer_type="$1"
@@ -249,51 +328,9 @@ function handle_yum_installer() {
   sudo yum install -y "$installer_value"
 }
 
-# Some might object to me using 'which' here, because it's slow. That's true, but it outputs the format I need faster than I can format type's format.
-# Benchmarked using hyperfine
-# Benchmark 1: which -a exa
-#   Time (mean ± σ):      51.5 ms ±   5.9 ms    [User: 8.8 ms, System: 3.4 ms]
-#   Range (min … max):    42.2 ms …  67.7 ms    100 runs
 
-# Benchmark 1: type -fa exa
-#   Time (mean ± σ):      54.6 ms ±   5.3 ms    [User: 8.1 ms, System: 4.6 ms]
-#   Range (min … max):    42.4 ms …  69.1 ms    100 runs
 
-# Benchmark 1: type -a exa
-#   Time (mean ± σ):      53.0 ms ±   6.7 ms    [User: 6.9 ms, System: 5.0 ms]
-#   Range (min … max):    41.9 ms …  76.6 ms    100 runs
 
-function call_binary() {
-  local program_name="$1"
-  local secondrun="$2"
-  local -n args="$3"
-  debug "Want to run: $program_name ${args[*]}"
-  local executables_on_path
-  executables_on_path=$(which -a "$program_name")
-  debug "Matching executables on path: ${executables_on_path[*]}"
-  # For each path in IGNORE_FROM, remove it from the list of executables on path
-  for path in "${IGNORE_FROM[@]}"; do
-    debug "Removing $path from executables on path"
-    executables_on_path=$(echo "$executables_on_path" | grep -v "$path")
-  done
-  first_result=$(echo "$executables_on_path" | head -n 1)
-  debug "First matching executable: $first_result"
-  if [ -z "$first_result" ] && [ "$secondrun" == "true" ]; then
-    err "We tried to install but still didn't find $program_name on path. Exiting."
-    exit 1
-  elif [ -z "$first_result" ]; then
-    stderr "Could not find $program_name on path, attempting to install"
-    if get_binary "$program_name"; then
-      call_binary "$program_name" true "${args[@]}"
-    else
-      err "Could not install $program_name"
-      exit 1
-    fi
-  else
-    "$first_result" "${args[@]}"
-  fi
-
-}
 
 #### Runtime ####
 

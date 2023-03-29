@@ -1,0 +1,88 @@
+#!/bin/bash
+# This script is assumed to be ran via a symlink, the name of which should
+#  be the executable we're trying to run.
+
+# When doing a PATH lookup, ignore files from the same directory as this script
+#  as it'll just be the wrapper
+IGNORE_FROM=("$(dirname "$0")")
+BINARY_ARGS=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  -h | --help)
+    echo "$HELP"
+    exit 0
+    ;;
+  -u | --update)
+    UPDATE=true
+    shift
+    ;;
+  -i | --ignore-from)
+    IGNORE_FROM+=("$2")
+    shift 2
+    ;;
+  -d | --debug)
+    DEBUG=true
+    shift
+    ;;
+  *)
+    BINARY="$1"
+    shift
+    BINARY_ARGS+=("$@")
+    break
+    ;;
+  esac
+done
+
+# Override err to write directly to stderr if we have a tty
+#  because a lot of applications grab output from stdout and we don't want to
+#  pollute it
+function err() {
+  if [ -t 1 ]; then
+    stderr "$@"
+  fi
+}
+
+function stderr() {
+  cat <<<"$@" 1>&2
+}
+
+function debug() { if [ "$DEBUG" = true ]; then err "$@"; fi; }
+
+function call_binary() {
+  local program_name="$1"
+  local secondrun="$2"
+  local -n args="$3"
+  debug "Want to run: $program_name ${args[*]}"
+  local executables_on_path
+  executables_on_path=$(which -a "$program_name")
+  debug "Matching executables on path: ${executables_on_path[*]}"
+  # For each path in IGNORE_FROM, remove it from the list of executables on path
+  for path in "${IGNORE_FROM[@]}"; do
+    debug "Removing $path from executables on path"
+    executables_on_path=$(echo "$executables_on_path" | grep -v "$path")
+  done
+  first_result=$(echo "$executables_on_path" | head -n 1)
+  debug "First matching executable: $first_result"
+  if [ -z "$first_result" ] && [ "$secondrun" == "true" ]; then
+    err "We tried to install but still didn't find $program_name on path. Exiting."
+    exit 1
+  elif [ -z "$first_result" ]; then
+    stderr "Could not find $program_name on path, attempting to install"
+    if get_binary "$program_name"; then
+      call_binary "$program_name" true "${args[@]}"
+    else
+      err "Could not install $program_name"
+      exit 1
+    fi
+  else
+    "$first_result" "${args[@]}"
+  fi
+}
+
+if [ -z "$BINARY" ]; then
+  stderr "No binary specified"
+  err "$HELP"
+  exit 1
+fi
+
+call_binary "$BINARY" false BINARY_ARGS
