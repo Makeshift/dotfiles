@@ -298,7 +298,7 @@ elif [ ! -f "$HOME/.stderred_failed" ]; then
   fi
 fi
 # Add chezmoi completions TODO: Broken
-# if command -v chezmoi >/dev/null; then . <(chezmoi completion bash); fi
+if command -v chezmoi >/dev/null; then . <(chezmoi completion bash); fi
 
 #### Replace built-ins right at the end so other scripts don't cause issues ####
 
@@ -310,7 +310,7 @@ fi
 #   alias egrep='rg --pcre2'
 #   alias fgrep='rg -F'
 # else
-alias grep='grep -r --color=auto'
+# alias grep='grep -r --color=auto'
 alias rgrep='grep -r --color=auto'
 alias egrep='grep -E --color=auto'
 alias fgrep='grep -F --color=auto'
@@ -372,9 +372,14 @@ alias less="less -r"             # Interpret colours with less
 #   chezmoi update 2>&1 | grep -v "config file template has changed" | grep -v "Already up to date" | grep -v "is up to date"
 # fi
 
-##### Neofetch to show system summary #####
+# Make wget grab actual filenames
+alias wget='wget -c --content-disposition'
 
-if command -v neofetch >/dev/null; then
+##### Fetch system summary #####
+if command -v fastfetch >/dev/null; then
+
+  fastfetch
+elif command -v neofetch >/dev/null; then
   if [ -z "$NEOFETCH_LAUNCHED_BY_PROFILE" ]; then
     neofetch
   fi
