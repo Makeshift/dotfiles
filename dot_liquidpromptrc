@@ -9,12 +9,13 @@
 # 	out += `# ${varName}: ${description}\n# Default: ${defaultVar}\n${varName}=${defaultVar}\n\n`
 # }
 # console.log(out)
+# Last updated 2023-03-31
 
 LP_DEBUG_TIME=0
 
 # LP_MARK_PREFIX: String added directly before LP_MARK_DEFAULT, after all other parts of the prompt. Can be used to tag the prompt in a way that is less intrusive than LP_PS1_PREFIX, or add a newline before the prompt mark. For example:
 # LP_MARK_PREFIX=$'\n'
-# 
+#
 # Default: " "
 LP_MARK_PREFIX=" "
 
@@ -95,7 +96,7 @@ LP_DELIMITER_KUBECONTEXT_SUFFIX=""
 # Any subdirectory under the input directory is also disabled, so setting “/repos” would disable VCS display when the current directory is “/repos/a-repo”. Setting ("/") would disable VCS display completely.
 # An example value would be:
 # LP_DISABLED_VCS_PATHS=("/a/svn/repo" "/home/me/my/large/repo")
-# 
+#
 # See also: LP_MARK_DISABLED.
 # New in version 2.0.
 # Default: ()
@@ -541,7 +542,7 @@ LP_MARK_WIFI="📶"
 #     $CRIT_RED
 #     $DANGER_RED
 # )
-# 
+#
 # See also: LP_ENABLE_BATT, LP_ENABLE_LOAD, LP_ENABLE_TEMP, and LP_ENABLE_WIFI_STRENGTH.
 # Default: 
 LP_COLORMAP=("" $GREEN $BOLD_GREEN $YELLOW $BOLD_YELLOW $RED $BOLD_RED $WARN_RED $CRIT_RED $DANGER_RED)

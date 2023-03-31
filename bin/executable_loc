@@ -1,8 +1,0 @@
-#!/bin/bash
-set -a
-x86_64_loc_INSTALLER_CARGO="loc"
-armv7l_loc_INSTALLER_CARGO="loc"
-aarch64_loc_INSTALLER_CARGO="loc"
-armhf_loc_INSTALLER_CARGO="loc"
-
-$HOME/bin/run_or_get_app loc "$@"

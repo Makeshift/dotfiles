@@ -264,8 +264,8 @@ alias path='echo -e ${PATH//:/\\n}'                                       # Pret
 alias reset="reset;clear"                                                 # Clean up the screen
 alias lsdir="ls -d */"                                                    # Show only dirs
 alias vpn=xaval                                                           # Poor man's SSH-based VPN (https://github.com/ivanilves/xiringuito)
-alias disable-git-ps1='source $(hash -t export-to-shell) LP_ENABLE_GIT=0' # Sometimes liquidprompt's git prompt lags a lot, this disables it
-alias enable-git-ps1='source $(hash -t export-to-shell) LP_ENABLE_GIT=1'  # Re-enables liquidprompt's git prompt
+# alias disable-git-ps1='source $(hash -t export-to-shell) LP_ENABLE_GIT=0' # Sometimes liquidprompt's git prompt lags a lot, this disables it
+# alias enable-git-ps1='source $(hash -t export-to-shell) LP_ENABLE_GIT=1'  # Re-enables liquidprompt's git prompt
 alias forget='history -d $((HISTCMD - 1))'                                # Forget the last command
 
 ###### Interactive Imports ######

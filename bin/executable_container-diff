@@ -1,6 +1,0 @@
-#!/bin/bash
-set -a
-x86_64_aws_vault_INSTALLER_BINARY="https://github.com/GoogleContainerTools/container-diff/releases/download/v0.17.0/container-diff-linux-amd64"
-x86_64_aws_vault_INSTALLER_BINARY_INSTALL_LOCATION="/usr/local/bin/container-diff"
-
-$HOME/bin/run_or_get_app aws_vault "$@"

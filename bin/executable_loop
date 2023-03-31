@@ -1,8 +1,0 @@
-#!/bin/bash
-set -a
-x86_64_loop_rs_INSTALLER_CARGO="loop-rs"
-armv7l_loop_rs_INSTALLER_CARGO="loop-rs"
-aarch64_loop_rs_INSTALLER_CARGO="loop-rs"
-armhf_loop_rs_INSTALLER_CARGO="loop-rs"
-
-$HOME/bin/run_or_get_app loop-rs "$@"
