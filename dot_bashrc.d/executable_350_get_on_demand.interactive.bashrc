@@ -14,7 +14,7 @@ function run_or_eget() {
     eget "$eget_command"
   fi
   # Remove the alias and run the command
-  unalias "$app_name"
+  unalias "$app_name" >/dev/null 2>&1
   "$app_name" "${args[@]}"
 }
 
