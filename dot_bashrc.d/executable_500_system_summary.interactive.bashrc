@@ -1,7 +1,7 @@
 ##### Fetch system summary #####
-if command -v fastfetch >/dev/null; then
+if which fastfetch &>/dev/null; then
   fastfetch
-elif command -v neofetch >/dev/null; then
+elif which neofetch &>/dev/null; then
   if [ -z "$NEOFETCH_LAUNCHED_BY_PROFILE" ]; then
     neofetch
   fi

@@ -16,5 +16,5 @@ if [ ! -f "/usr/local/lib/libstderred.so" ] && [ -f "/etc/debian_version" ]; the
 fi
 
 if [ -f "/usr/local/lib/libstderred.so" ]; then
-  export LD_PRELOAD="$HOME/lib/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
+  export LD_PRELOAD="/usr/local/lib/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
 fi

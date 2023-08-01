@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Array of paths to add to PATH if they exist
+# Added in reverse order so that the first path in the array is the first path
 path_array=(
   "$HOME/bin"
   "$HOME/.local/bin"
@@ -14,8 +15,8 @@ path_array=(
 )
 
 # Add paths to PATH if they exist and aren't already in PATH
-for i in "${path_array[@]}"; do
-  if [ -d "$i" ] && [[ ":$PATH:" == *":$i:"* ]]; then
-    export PATH="$i:$PATH"
+for ((i=${#path_array[@]}-1; i>=0; i--)); do
+  if actual=$(realpath "${path_array[$i]}" 2>/dev/null) && [ -d "${actual}" ] && [[ ":$PATH:" != *":$actual:"* ]]; then
+    export PATH="${actual}:$PATH"
   fi
 done

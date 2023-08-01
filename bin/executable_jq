@@ -1,0 +1,8 @@
+#!/bin/bash
+set -a
+x86_64_jq_INSTALLER_APT="jq"
+armv7l_jq_INSTALLER_APT="jq"
+aarch64_jq_INSTALLER_APT="jq"
+armhf_jq_INSTALLER_APT="jq"
+
+$HOME/bin/run_or_get_app jq "$@"

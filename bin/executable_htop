@@ -1,0 +1,8 @@
+#!/bin/bash
+set -a
+x86_64_htop_INSTALLER_APT="htop"
+armv7l_htop_INSTALLER_APT="htop"
+aarch64_htop_INSTALLER_APT="htop"
+armhf_htop_INSTALLER_APT="htop"
+
+$HOME/bin/run_or_get_app htop "$@"

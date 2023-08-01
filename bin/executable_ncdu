@@ -1,0 +1,8 @@
+#!/bin/bash
+set -a
+x86_64_ncdu_INSTALLER_APT="ncdu"
+armv7l_ncdu_INSTALLER_APT="ncdu"
+aarch64_ncdu_INSTALLER_APT="ncdu"
+armhf_ncdu_INSTALLER_APT="ncdu"
+
+$HOME/bin/run_or_get_app ncdu "$@"

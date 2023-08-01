@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO Refactor this
+
 read -r -d '' HELP <<"EOF"
 Usage: run_or_get_app [-h | --help] [-d | --debug] [-u | --update] [-i | --ignore-from <PATH>] <APPLICATION> [ARGS]...
 

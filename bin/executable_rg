@@ -1,0 +1,8 @@
+#!/bin/bash
+set -a
+x86_64_rg_INSTALLER_APT="ripgrep"
+armv7l_rg_INSTALLER_APT="ripgrep"
+aarch64_rg_INSTALLER_APT="ripgrep"
+armhf_rg_INSTALLER_APT="ripgrep"
+
+$HOME/bin/run_or_get_app rg "$@"
