@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Run, or install and run eget
+
+
+executables_on_path=$(which -a "eget")
+# Ignore the one in this directory
+IGNORE_FROM=("$(dirname "$0")")
+for path in "${IGNORE_FROM[@]}"; do
+  executables_on_path=$(echo "$executables_on_path" | grep -v "$path")
+done
+
+first_result=$(echo "$executables_on_path" | head -n 1)
+
+if [ -n "$first_result" ]; then
+  "$first_result" "$@"
+else
+  curl https://zyedidia.github.io/eget.sh | sh
+  mv eget /usr/local/bin/eget
+  # Run eget
+  /usr/local/bin/eget "$@"
+fi

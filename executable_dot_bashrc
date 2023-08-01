@@ -1,170 +1,20 @@
 #!/bin/bash
-# Get execution time of each command
+
+# Get execution time of each command - Useful for debugging why bashrc is slow
 # N=$(date +%s%N)
 # export PS4='+[$(((`date +%s%N`-$N)/1000000))ms][${BASH_SOURCE}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 # set -x
 
-###### Source vars we don't sync to git ######
-# shellcheck source=/home/connor/.bash_secret
-[ -f "$HOME/.bash_secret" ] && . "$HOME/.bash_secret"
-
-#### General PATH stuff and imports ####
-PATH="$HOME/bin:$HOME/bin/wrappers:$HOME/.local/bin:$HOME/go/bin:$HOME/.cargo/bin:/usr/local/go/bin:$PATH"
-
-# NPM / NVM
-if command -v nvm >/dev/null; then
-  export NVM_DIR="$HOME/.nvm"
-  # shellcheck source=/home/connor/.nvm/nvm.sh
-  [ -f "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-  # shellcheck source=/home/connor/.nvm/bash_completion
-  [ -f "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-  nvm current use "$(nvm current)"
-fi
-
-# Golang
-export GOPATH="$HOME/go"
-
-# Rust
-# shellcheck source=/home/connor/.cargo/env
-[ -f "$HOME/.cargo/env" ] && command -v cargo >/dev/null && . "$HOME/.cargo/env"
-
-#### Architecture ####
-unameOut="$(uname -s)"
-case "${unameOut}" in
-Linux*) export os=Linux ;;
-Darwin*) export os=Mac ;;
-CYGWIN*) export os=Windows ;;
-MINGW*) export os=Windows ;;
-*) export os="UNKNOWN:${unameOut}" ;;
-esac
-
-# Handle armhf/aarch64 systems by appending _arm32 to compiled binaries in ~/bin TODO: should be fixed by wrapper
-architecture="$(uname -m)"
-export architecture
-if [[ "$architecture" =~ "aarch64" ]]; then
-  export archstring="_arm32"
-fi
-
-# If there are files in our home bin with an archstring that matches our arch
-#  then create aliases to them so they take priority over PATH
-# Also this is a funky way to do this, so stop shellcheck whining
-# TODO wrapper script should handle this
-# shellcheck disable=all
-if [ -n "${archstring}" ]; then
-  for file in $HOME/bin/*${archstring}; do
-    file=$(basename "$file")
-    file=${file%$archstring}
-    alias ${file}=${file}${archstring}
-  done
-fi
-
-#### WSL ####
-fix_wsl2_interop() {
-  for i in $(pstree -np -s $$ | /bin/grep -o -E '[0-9]+'); do
-    if [[ -e "/run/WSL/${i}_interop" ]]; then
-      export WSL_INTEROP=/run/WSL/${i}_interop
-    fi
-  done
-}
-
-if [[ "$(uname -r)" =~ "microsoft" ]]; then
-  export os=wsl
-  fix_wsl2_interop
-fi
-
-#### Global Functions ####
-# Gets $SHOUTRRR_TELEGRAM_CHAT_URI from .bash_secret
-function telegram() {
-  if which shoutrrr >/dev/null; then
-    shoutrrr send "$SHOUTRRR_TELEGRAM_CHAT_URI" "$*"
-  fi
-}
-
-#### Docker ####
-export COMPOSE_DOCKER_CLI_BUILD=1
-export DOCKER_BUILDKIT=1
-
-#### AWS ####
-# See .bash_secret for:
-# AWS_VAULT_BACKEND
-# AWS_VAULT_FILE_PASSPHRASE
-# AWS_PROFILE
-
-#export TF_DATA_DIR="$HOME/.terraform.d/"
-#export TERRAGRUNT_DOWNLOAD="."
-export TERRAGRUNT_SOURCE_UPDATE=true
-export TERRAGRUNT_FETCH_DEPENDENCY_OUTPUT_FROM_STATE=true
-export TERRAGRUNT_USE_PARTIAL_PARSE_CONFIG_CACHE=true
-export NODE_OPTIONS=--max_old_space_size=16384
-#export TF_PLUGIN_CACHE_DIR=~/.terraform-cache
-export AWS_VAULT_BACKEND=file
-export AWS_PROFILE=iea
-
-# export VAULTIFY_DEBUG=1                         # Uncomment for extra debugging output
-export AWS_VAULT_SESSION_TIME_HOURS=8 # Change this to suit your needs
-
-AWS_PROGRAMS_TARGET_PATH="$HOME/.aws/bin"         # This is where we install symlinks to wrappers for AWS commands
-export PATH="${AWS_PROGRAMS_TARGET_PATH}:${PATH}" # Make sure our symlinks are earlier in the path than all the others
-
-mkdir -p "$AWS_PROGRAMS_TARGET_PATH" >/dev/null 2>&1
-
-# Enable AWS auto-completion
-if command -v aws_completer >/dev/null; then
-  complete -C "$(command -v aws_completer)" aws
-fi
-
-# This 'vaultify' script wraps the given program with aws-vault
-# The "SHELLSCRIPT" heredoc delimiter is used specifically to make it easier to edit with the 'Template Literal Editor'
-#  extension in VSCode: https://marketplace.visualstudio.com/items?itemName=plievone.vscode-template-literal-editor
-cat >"$AWS_PROGRAMS_TARGET_PATH/vaultify" <<"SHELLSCRIPT"
-#!/bin/bash
-function debug() { if [ -n "$VAULTIFY_DEBUG" ]; then echo "$@" >$(tty); fi; }
-program_name=$(basename "$0")
-debug "Called by: $program_name in CWD $PWD"
-current_script_path="$0"
-debug "Current script path: $current_script_path"
-executables_on_path=$(which -a "$program_name")
-debug "Matching executables on path: ${executables_on_path[*]}"
-actual_program=$(echo "${executables_on_path[*]}" | grep -v "$current_script_path" | head -n1)
-debug "First matching executable not including current script path: $actual_program"
-vault_exe=$(command -v aws-vault)
-if [ -n "$AWS_VAULT" ]; then
-  debug "Env var AWS_VAULT is set, so vault has probably already been ran, not running again"
-  program="$actual_program"
-  args=("$@")
-else
-  program="${vault_exe}"
-  args=("exec" "--duration=${AWS_VAULT_SESSION_TIME_HOURS-8}h" "${AWS_PROFILE}" "--" "${actual_program}")
-  args+=("$@")
-fi
-debug "Final command: $program ${args[*]}"
-"$program" "${args[@]}"
-SHELLSCRIPT
-chmod +x "$AWS_PROGRAMS_TARGET_PATH/vaultify"
-# This function creates a new wrapper script in $AWS_PROGRAMS_TARGET_PATH, which by default is $HOME/.aws/bin which we add to the PATH before
-#  /usr/local/bin, meaning it will be found first by commands/scripts looking for executables.
-function make_vault_script() {
-  local program="$1"
-  if [ ! -f "$AWS_PROGRAMS_TARGET_PATH/$program" ]; then
-    ln -s "$AWS_PROGRAMS_TARGET_PATH/vaultify" "$AWS_PROGRAMS_TARGET_PATH/$program"
-  fi
-}
-# Create vault scripts for programs requiring AWS credentials
-vaultify_programs=("aws" "terraform" "terragrunt" "ecs-cli" "chamber" "terragrunt-status" "awslogs" "aws-shell" "s3cmd" "s3fs")
-for program in "${vaultify_programs[@]}"; do
-  make_vault_script "$program"
+# Run all scripts in ~/.bashrc.d/ that have a .always.bashrc extension
+# shellcheck disable=SC1090
+for file in ~/.bashrc.d/*.always.bashrc; do
+  source "$file"
 done
 
-export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-
-# export PYENV_ROOT="$HOME/.pyenv"
-# command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-# eval "$(pyenv init -)"
-
-# If we're in an interactive shell, run a script specifically for that
-# shellcheck source=./executable_dot_bash_interactive
-if [[ -f "$HOME/.bash_interactive" ]]; then
-  if [[ $- == *i* ]]; then
-    . "$HOME/.bash_interactive"
-  fi
+# If we're in an interactive shell, run special scripts in ~/.bashrc.d/ that have a .interactive.bashrc extension
+# shellcheck disable=SC1090
+if [[ $- == *i* ]]; then
+  for file in ~/.bashrc.d/*.interactive.bashrc; do
+    source "$file"
+  done
 fi

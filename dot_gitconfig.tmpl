@@ -169,9 +169,14 @@
 
 [init]
     templateDir = "~/.git-template"
-[commit]
+
 {{- if (hasKey . "gitconfig_user_signingkey") }}
+[commit]
 	gpgsign = true
+[gpg]
+    format = ssh
+[gpg "ssh"]
+    program = /mnt/c/Users/me/AppData/Local/1Password/app/8/op-ssh-sign.exe
 {{- end }}
 [submodule]
 	recurse = true

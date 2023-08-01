@@ -19,7 +19,7 @@ chezmoi add $FILE
 # Update from this repo and apply changes
 chezmoi update
 
-# If you've modified the local chezmoi repo in `~/.local/share/chezmoi/`, this applies those changes to your homedir. 
+# If you've modified the local chezmoi repo in `~/.local/share/chezmoi/`, this applies those changes to your homedir.
 #  There's a vscode code-workspace in the repo so you can open it up and edit things, and if you've got the extension
 #  Run on Save installed, it'll automatically apply after saving a file
 chezmoi apply
@@ -50,7 +50,7 @@ chezmoi doctor
 
 There's a vscode workspace in the repo (`chezmoi cd`) set up specifically for editing the files included in this package.
 
-After editing, run `chezmoi apply` (after `chezmoi diff`, if you like) to apply those changes to your actual homedir. If you've got the extension [Run on Save](https://marketplace.visualstudio.com/items?itemName=emeraldwalk.RunOnSave) installed, then apply will be ran automatically after saving a file. 
+After editing, run `chezmoi apply` (after `chezmoi diff`, if you like) to apply those changes to your actual homedir.
 
 Note that if chezmoi hangs waiting for user input, you will need to kill the process (`killall chezmoi`) and run apply manually, because chezmoi locks the database.
 
