@@ -192,3 +192,8 @@ function top10net() {
 
 # Remembering bc exists is hard
 function math() { echo "scale=5;" "$@" | bc -l; }
+
+# https://github.com/common-fate/granted
+if which assume &> /dev/null; then
+	alias assume="source assume"
+fi
