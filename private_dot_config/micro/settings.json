@@ -1,11 +1,9 @@
 {
     "autosu": true,
     "backup": false,
-    "clipboard": "terminal",
     "diffgutter": true,
     "hlsearch": true,
     "mkparents": true,
-    "paste": true,
     "rmtrailingws": true,
     "savecursor": true,
     "status": true,

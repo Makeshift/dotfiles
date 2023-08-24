@@ -4,7 +4,5 @@
     "CtrlH": "DeleteWordLeft",
     "Ctrl-P": "CommandMode",
     "\u001b[1;7A": "SpawnMultiCursorUp",
-    "\u001b[1;7B": "SpawnMultiCursorDown",
-    "Ctrl-C": "",
-    "Ctrl-V": ""
+    "\u001b[1;7B": "SpawnMultiCursorDown"
 }
