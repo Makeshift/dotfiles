@@ -1,0 +1,6 @@
+aws sso login --no-browser --sso-session echobox
+export CODEARTIFACT_AUTH_TOKEN=$(aws --profile echobox-codeartifacts codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)
+until kubectl get all --all-namespaces; do
+    sleep 10
+done
+alias ssm='aws ssm start-session --target'

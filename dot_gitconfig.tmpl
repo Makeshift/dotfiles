@@ -101,7 +101,7 @@
     # https://git-scm.com/docs/git-update-index#_untracked_cache
     untrackedCache = true
 
-    editor = {{ env "EDITOR" }}
+    editor = {{ default "micro" (env "EDITOR") }}
 	autocrlf = false
 	eol = lf
 
@@ -176,7 +176,7 @@
 [gpg]
     format = ssh
 [gpg "ssh"]
-    program = /mnt/c/Users/me/AppData/Local/1Password/app/8/op-ssh-sign.exe
+    program = /mnt/c/Users/maddie/AppData/Local/1Password/app/8/op-ssh-sign.exe
 {{- end }}
 [submodule]
 	recurse = true
