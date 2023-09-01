@@ -1,6 +1,128 @@
+# This script queries AWS SSO for a list of accounts and roles, then creates a config file and a profile list file
+#   and also runs a bunch of useful post-login commands for each account
+
+# Run this script to do all the login stuff (when needed), then run `source /tmp/aws_work_conf/source_me` to set up the aliases and env vars
+# To automatically source the file on every new shell, add this to your .bashrc:
+# if [[ -f /tmp/aws_work_conf/source_me ]]; then source /tmp/aws_work_conf/source_me; fi
+
+# Tested and working on Bash version 5.2.15(1)-release on Ubuntu 23.04
+
+# I have no idea if it works on older bash versions or stupid operating systems like MacOS, good luck :D
+
+# Here's a short list of things it does:
+# - Gives you a link to log you into SSO
+# - Creates a profile for each account and role you have access to (use `profiles` to see them)
+# - For each account, it:
+#   - Logs Docker into its ECR
+#   - Adds any EKS clusters to your kubeconfig
+# - For each profile, it:
+#   - Creates an alias to switch to that profile
+
+
+unset AWS_DEFAULT_PROFILE # If this is set, AWS will try to use it before we've actually made it
+export AWS_DEFAULT_REGION=eu-west-1
+config_file_default_content="[sso-session echobox]
+sso_start_url = https://echobox.awsapps.com/start#
+sso_registration_scopes = sso:account:access
+sso_region = eu-west-1
+region = eu-west-1
+"
+config_dir="/tmp/aws_work_conf"
+config_file="$config_dir/config"
+profile_list_file="$config_dir/profile_list"
+source_me_file="$config_dir/source_me"
+pidfile="$config_dir/pidfile"
+rm "$source_me_file" "$pidfile" 2>/dev/null
+
+mkdir -p "$config_dir"
+
+echo -e "Account Name\tID\tRole\tProfile\n" > "$profile_list_file"
+echo "$config_file_default_content" > "$config_file"
+
+# Tell AWS to use the config file we've created
+export AWS_CONFIG_FILE="$config_file"
+
+# Pretty colours!
+R="\033[0m" # Text Reset
+Cyan="\033[0;36m"
+Green="\033[0;32m"
+
+# Get the user to login via SSO
 aws sso login --no-browser --sso-session echobox
-export CODEARTIFACT_AUTH_TOKEN=$(aws --profile echobox-codeartifacts codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)
-until kubectl get all --all-namespaces; do
-    sleep 10
+
+# `aws sso list-accounts` requires an `--access-token`, despite the access token being available in the cache
+#  so we need to go and get it from the cache ourselves
+# aws/aws-cli#5057
+sso_token_file=$(command grep -rl "startUrl" ~/.aws/sso/cache/*)
+sso_access_token=$(jq -r ".accessToken" < "$sso_token_file")
+
+aws sso list-accounts --access-token "$sso_access_token" | jq -c '.accountList[]' | while read -r account; do
+    account_id=$(jq -r ".accountId" <<< "$account")
+    account_name=$(jq -r ".accountName" <<< "$account")
+    sanitised_account_name=$(echo "$account_name" | sed -e 's/[^[:alnum:]]/-/g' | tr '[:upper:]' '[:lower:]')
+    # If there's more than one role for an account, we use the first one as the one with the profile $sanitised_account_name, then
+    #  add the rest as new profiles with the name $sanitised_account_name-$sanitised_role_name
+    count=0
+    aws sso list-account-roles --access-token="$sso_access_token" --account-id="$account_id" | jq -c '.roleList[]' | while read -r role; do
+        count=$((count + 1))
+        role_name=$(jq -r ".roleName" <<< "$role")
+        sanitised_role_name=$(echo "$role_name" | sed -e 's/[^[:alnum:]]/-/g' | tr '[:upper:]' '[:lower:]')
+        profile_name="$sanitised_account_name"
+        if [[ $count -gt 1 ]]; then
+            profile_name="$sanitised_account_name-$sanitised_role_name"
+        fi
+        echo -e "${Cyan}Creating profile ${Green}$profile_name${Cyan} for account ${Green}$account_name${Cyan} with role ${Green}$role_name${R}"
+        echo -e "$account_name\t$account_id\t$role_name\t$profile_name\n" >> "$profile_list_file"
+        echo -e "[profile $profile_name]
+sso_session = echobox
+sso_account_id = $account_id
+sso_role_name = $role_name
+" >> "$config_file"
+
+        # Create an alias to switch to this profile
+        echo "alias ${profile_name}=\"export AWS_DEFAULT_PROFILE=${profile_name}\"" >> "$source_me_file"
+
+        # Here is where we do all our "once per account" stuff
+        if [[ $count -eq 1 ]]; then
+            # Log in to ECR
+            echo -e "${Cyan}Logging into ECR for account ${Green}${account_name}${R}"
+            aws --profile "$profile_name" ecr get-login-password | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com" &
+            echo $! >> "$pidfile"
+            # Add any EKS clusters to kubeconfig
+            (
+            aws --profile "$profile_name" eks list-clusters | jq -r ".clusters[]" | while read -r cluster_name; do
+                echo -e "${Cyan}Adding EKS cluster ${Green}$cluster_name${Cyan} to kubeconfig${R}"
+                aws --profile "$profile_name" eks update-kubeconfig --name "$cluster_name"
+            done
+            ) &
+            echo $! >> "$pidfile"
+        fi
+    done
 done
-alias ssm='aws ssm start-session --target'
+
+# the wait builtin only works if it's a child process, and our shell shenanigans above breaks that
+function wait_on_pid() {
+  tail --pid="$1" -f /dev/null
+}
+
+# Wait for all the background tasks to finish
+while read -r pid; do
+    wait_on_pid "$pid"
+done < "$pidfile"
+
+# Grab a CodeArtifact auth token
+CODEARTIFACT_AUTH_TOKEN=$(aws --profile shared-code-artifacts codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)
+# Set a default profile
+AWS_DEFAULT_PROFILE=original-main-account
+
+# Finally, create the source_me file containing all the aliases and env vars we've set up
+echo -e "export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
+export AWS_CONFIG_FILE=$AWS_CONFIG_FILE
+export AWS_DEFAULT_PROFILE=$AWS_DEFAULT_PROFILE
+export CODEARTIFACT_AUTH_TOKEN=\"$CODEARTIFACT_AUTH_TOKEN\"
+alias profiles=\"cat $profile_list_file | column -ts $'\\t'\"
+" >> "$source_me_file"
+
+
+. "$source_me_file"
+echo -e "${Cyan}All done! Type ${Green}source $source_me_file${Cyan} to set up your shell${R}"
