@@ -11,11 +11,9 @@ function install_stderred() {
     git clone https://github.com/sickill/stderred.git
     cd stderred || exit 1
     make
-    mkdir -p ~/lib
     file_placed=0
     for f in "${search_for[@]}"; do
         if [ -d "$(dirname "$f")" ] && test -w "$(dirname "$f")" && cp build/libstderred.so "$f"; then
-            mkdir -p "$(dirname "$f")"
             file_placed=1
             break
         fi
