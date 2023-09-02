@@ -1,20 +1,42 @@
-#!/bin/bash
-
 # Makes stderr red.
 # TODO: Fork stderred and use CI to build a binary for each platform
 
-if [ ! -f "/usr/local/lib/libstderred.so" ] && [ -f "/etc/debian_version" ]; then
-  sudo apt-get install -y build-essential cmake git
-  tmpdir=$(mktemp -d)
-  cd "$tmpdir" || exit 1
-  git clone https://github.com/sickill/stderred.git
-  cd stderred || exit 1
-  make
-  mkdir -p ~/lib
-  cp build/libstderred.so /usr/local/lib/
-  rm -rf "$tmpdir"
+search_for=("/usr/local/lib/libstderred.so" "$HOME/.lib/libstderred.so" "/usr/lib/libstderred.so" "/lib/libstderred.so")
+
+function install_stderred() {
+    sudo apt-get install -y build-essential cmake git
+    tmpdir=$(mktemp -d)
+    cd "$tmpdir" || exit 1
+    git clone https://github.com/sickill/stderred.git
+    cd stderred || exit 1
+    make
+    mkdir -p ~/lib
+    file_placed=0
+    for f in "${search_for[@]}"; do
+        if [ -d "$(dirname "$f")" ] && test -w "$(dirname "$f")" && cp build/libstderred.so "$f"; then
+            file_placed=1
+            break
+        fi
+    done
+    if [ "$file_placed" == 0 ]; then
+      echo "Couldn't find a place to put libstderred.so!" >&2
+    else
+      rm -rf "$tmpdir"
+    fi
+}
+
+found=0
+
+for f in "${search_for[@]}"; do
+    if [ -f "$f" ]; then
+        export LD_PRELOAD="$f${LD_PRELOAD:+:$LD_PRELOAD}"
+        found=1
+        break
+    fi
+done
+
+if [ "$found" == 0 ]; then
+  echo "Stderred not installed, run install_stderred to install it" >&2
 fi
 
-if [ -f "/usr/local/lib/libstderred.so" ]; then
-  export LD_PRELOAD="/usr/local/lib/libstderred.so${LD_PRELOAD:+:$LD_PRELOAD}"
-fi
+unset search_for found f
