@@ -24,6 +24,7 @@ function install_stderred() {
       echo "Couldn't find a place to put libstderred.so!" >&2
     else
       rm -rf "$tmpdir"
+      find_and_export_stderred
     fi
 }
 
