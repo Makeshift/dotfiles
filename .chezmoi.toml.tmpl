@@ -1,2 +1,10 @@
 [data]
   gitconfig_user_signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINGfErm055LFcyGiI09KTKDP8LPwt4RrLzJko0tNF4D6"
+  {{- if (output "sh" "-c" "uname -r" | lower | contains "microsoft") }}
+  is_wsl = true
+  windows_username = "{{ (output "sh" "-c" "basename $(wslpath $(wslvar USERPROFILE))" | trim) }}"
+  {{- else }}
+  is_wsl = false
+  windows_username = "UNSET"
+  {{- end }}
+  dynamic_app_download_path = "/usr/local/bin"

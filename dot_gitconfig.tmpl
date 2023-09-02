@@ -175,8 +175,10 @@
 	gpgsign = true
 [gpg]
     format = ssh
+{{- if .is_wsl }}
 [gpg "ssh"]
-    program = /mnt/c/Users/maddie/AppData/Local/1Password/app/8/op-ssh-sign.exe
+    program = /mnt/c/Users/{{ .windows_username }}/AppData/Local/1Password/app/8/op-ssh-sign.exe
+{{- end }}
 {{- end }}
 [submodule]
 	recurse = true

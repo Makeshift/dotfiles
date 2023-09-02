@@ -1,0 +1,18 @@
+# This file contains an array of apps to get on demand, in the format "app_name:github_user/repo"
+# Creates an alias for each app that isn't already in your path, and if you run the command
+#  it will install it
+fastfetch:fastfetch-cli/fastfetch
+bat:sharkdp/bat
+container-diff:GoogleContainerTools/container-diff
+dust:bootandy/dust
+exa:ogham/exa
+ripgrep:BurntSushi/ripgrep
+fd:sharkdp/fd
+grex:pemistahl/grex
+hyperfine:sharkdp/hyperfine
+lazydocker:jesseduffield/lazydocker
+micro:zyedidia/micro
+regctl:regclient/regclient
+shoutrrr:containrrr/shoutrrr
+youtube-dl:ytdl-org/youtube-dl
+ssh-key-sync:shoenig/ssh-key-sync

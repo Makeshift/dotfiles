@@ -1,0 +1,36 @@
+# Sets up aliases to grab applications on demand
+
+function command_exists() {
+  which "$1" >/dev/null 2>&1
+}
+
+# This function will only be called the first time an app is run in a given shell
+# So there will be an additional startup latency of like 50ms, but that's better
+#  than checking if the command exists during this scripts invocation, since that would add
+#  50ms for every command in the list when you open a new shell
+function run_or_eget() {
+  local app_name="$1"
+  local eget_command="$2"
+  local args=("${@:3}")
+
+  if ! command_exists "$app_name"; then
+    # check if eget exists, if not, get eget so we can get things
+    if ! command_exists eget; then
+      echo "Getting eget..." >&2
+      install_eget
+    fi
+    # This command doesn't exist, so run eget to get it
+    echo "Getting $app_name..." >&2
+    eget --to "{{ .dynamic_app_download_path }}/$app_name" "$eget_command"
+  fi
+  # Remove the alias and run the command
+  unalias "$app_name" >/dev/null 2>&1
+  "$app_name" "${args[@]}"
+}
+
+while read -r app; do
+  app_name="${app%%:*}"
+  eget_command="${app##*:}"
+  # shellcheck disable=SC2139,SC2086
+  alias $app_name="run_or_eget $app_name $eget_command"
+done <<< $(grep -v "^#" ~/.bashrc.d/github_apps_list.txt)
