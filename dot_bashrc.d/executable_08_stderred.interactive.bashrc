@@ -4,6 +4,7 @@
 search_for=("/usr/local/lib/libstderred.so" "$HOME/.lib/libstderred.so" "/usr/lib/libstderred.so" "/lib/libstderred.so")
 
 function install_stderred() {
+    local tmpdir, file_placed, f
     sudo apt-get install -y build-essential cmake git
     tmpdir=$(mktemp -d)
     cd "$tmpdir" || exit 1
@@ -25,18 +26,21 @@ function install_stderred() {
     fi
 }
 
-found=0
+function find_and_export_stderred() {
+  local found=0
+  local f
+  for f in "${search_for[@]}"; do
+      if [ -f "$f" ]; then
+          export LD_PRELOAD="$f${LD_PRELOAD:+:$LD_PRELOAD}"
+          found=1
+          break
+      fi
+  done
+  if [ "$found" == 0 ]; then
+    echo "Stderred not installed, run install_stderred to install it" >&2
+  fi
 
-for f in "${search_for[@]}"; do
-    if [ -f "$f" ]; then
-        export LD_PRELOAD="$f${LD_PRELOAD:+:$LD_PRELOAD}"
-        found=1
-        break
-    fi
-done
+}
 
-if [ "$found" == 0 ]; then
-  echo "Stderred not installed, run install_stderred to install it" >&2
-fi
 
-unset search_for found f
+unset search_for
