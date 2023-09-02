@@ -4,7 +4,7 @@
 search_for=("/usr/local/lib/libstderred.so" "$HOME/.lib/libstderred.so" "/usr/lib/libstderred.so" "/lib/libstderred.so")
 
 function install_stderred() {
-    local tmpdir, file_placed, f
+    local tmpdir file_placed f
     sudo apt-get install -y build-essential cmake git
     tmpdir=$(mktemp -d)
     cd "$tmpdir" || exit 1
