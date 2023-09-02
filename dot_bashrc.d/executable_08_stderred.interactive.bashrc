@@ -41,8 +41,8 @@ function find_and_export_stderred() {
   if [ "$found" == 0 ]; then
     echo "Stderred not installed, run install_stderred to install it" >&2
   fi
-
 }
 
+find_and_export_stderred
 
 unset search_for
