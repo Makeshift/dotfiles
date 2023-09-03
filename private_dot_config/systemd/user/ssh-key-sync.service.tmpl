@@ -1,0 +1,5 @@
+[Unit]
+Description=Synchronize ssh authorized keys with public keys from github.
+
+[Service]
+ExecStart={{ .dynamic_app_download_path }}/ssh-key-sync -verbose -system-user {{ .chezmoi.username }} -github-user {{ .github_username }}
