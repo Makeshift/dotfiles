@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cached_hash=$(cat "$HOME/.cache/chezmoi_makeshift/dotconfig_systemd_hash" || true)
+cached_hash=$(cat "$HOME/.cache/chezmoi_makeshift/dotconfig_systemd_hash" 2>/dev/null || true)
 curr_hash=$(find . -type f -exec sha256sum {} \;)
 
 if [ "$cached_hash" != "$curr_hash" ]; then

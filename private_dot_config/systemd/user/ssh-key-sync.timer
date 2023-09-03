@@ -1,0 +1,10 @@
+[Unit]
+Description=Run ssk-key-sync every 6 hours
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=6h
+Unit=ssh-key-sync.service
+
+[Install]
+WantedBy=timers.target
