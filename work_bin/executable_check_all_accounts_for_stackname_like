@@ -1,0 +1,8 @@
+#!/bin/bash
+
+stack_to_find=$1
+
+for profile in $(aws configure list-profiles); do
+	echo "Checking profile $profile..."
+	aws --profile "$profile" cloudformation list-stacks --query 'StackSummaries[*].[StackName]' --output text | grep -i "$stack_to_find" 2>/dev/null | sed 's/\(.*\)/  \1/'
+done

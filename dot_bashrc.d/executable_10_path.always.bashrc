@@ -3,7 +3,9 @@
 # Array of paths to add to PATH if they exist
 # Added in reverse order so that the first path in the array is the first path
 path_array=(
+  "$HOME/.bun/bin"
   "$HOME/bin"
+  "$HOME/work_bin"
   "$HOME/.local/bin"
   "$HOME/go/bin"
   "$HOME/.cargo/bin"

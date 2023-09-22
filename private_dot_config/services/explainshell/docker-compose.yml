@@ -1,0 +1,8 @@
+version: '3.3'
+services:
+
+  service:
+    image: ghcr.io/idank/idank/explainshell:master
+    restart: always
+    ports:
+      - '5000:5000'

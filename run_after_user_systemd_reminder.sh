@@ -11,4 +11,5 @@ if [ "$cached_hash" != "$curr_hash" ]; then
     find "$check_dir" -type f
     echo "User systemd config has changed, you may need to run:"
     echo "systemctl --user enable --now <unit>"
+    systemctl --user daemon-reload
 fi

@@ -1,0 +1,14 @@
+[Unit]
+Description=Sourcegraph docker compose stack
+PartOf=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+WorkingDirectory=%h/.config/services/sourcegraph
+ExecStart=docker compose up -d
+ExecStop=docker compose down
+
+[Install]
+WantedBy=default.target

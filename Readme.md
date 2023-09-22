@@ -68,6 +68,7 @@ Most other tools are downloaded specifically for your architecture (if able) as-
 The PATH set by `.bashrc` in this package is specifically ordered:
 
 * `$HOME/bin`
+* `$HOME/work_bin`
 * `$HOME/.local/bin`
 * `$HOME/go/bin`
 * `$HOME/.cargo/bin`
