@@ -4,4 +4,4 @@
 if [ ! -f "$HOME/.cache/venv/bin/activate" ]; then
     pip -m venv "$HOME/.cache/venv"
 fi
-source "$HOME/.cache/venv/bin/activate"
+source "$HOME/.cache/venv/bin/activate" || true 2>&1
