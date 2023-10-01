@@ -18,6 +18,7 @@
 # - For each profile, it:
 #   - Creates an alias to switch to that profile
 
+filter_out_profiles=("ace-test-awsreadonlyaccess" "tracker-awsreadonlyaccess" "echobox-test-account-awsreadonlyaccess" "email-service" "email-service-awsreadonlyaccess" "client-vpn-awsreadonlyaccess" "benchmarks-awsreadonlyaccess" "original-main-account-awsreadonlyaccess" "cors-proxy-awsreadonlyaccess" "echobox-root-awsreadonlyaccess" "shared-code-artifacts-awsreadonlyaccess" "newsletters-awsreadonlyaccess" "newsletters-optimisation-awsreadonlyaccess")
 
 unset AWS_DEFAULT_PROFILE AWS_PROFILE # If this is set, AWS will try to use it before we've actually made it
 export AWS_DEFAULT_REGION=eu-west-1
@@ -70,6 +71,18 @@ aws sso list-accounts --access-token "$sso_access_token" | jq -c '.accountList[]
         profile_name="$sanitised_account_name"
         if [[ $count -gt 1 ]]; then
             profile_name="$sanitised_account_name-$sanitised_role_name"
+        fi
+        # If it's in the filter array, skip it
+        skip=false
+        for filter in "${filter_out_profiles[@]}"; do
+            if [[ $filter == "$profile_name" ]]; then
+                skip=true
+                break
+            fi
+        done
+        if [ "$skip" == "true" ]; then
+            count=$((count - 1))
+            continue
         fi
         echo -e "${Cyan}Creating profile ${Green}$profile_name${Cyan} for account ${Green}$account_name${Cyan} with role ${Green}$role_name${R}"
         echo -e "$account_name\t$account_id\t$role_name\t$profile_name" >> "$profile_list_file"
