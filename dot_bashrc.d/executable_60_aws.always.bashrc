@@ -5,6 +5,7 @@ if command -v aws_completer >/dev/null; then
 fi
 
 if [[ -f $HOME/.aws/source_me ]]; then source $HOME/.aws/source_me; fi
+alias work='work && . $HOME/.aws/source_me' # Reload AWS credentials after 'work' logs us in
 
 # https://github.com/common-fate/granted
 if which assume &> /dev/null; then
