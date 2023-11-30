@@ -79,7 +79,7 @@ LP_TIME_FORMAT="%H:%M:%S"
 # See also: LP_ENABLE_KUBECONTEXT, LP_DELIMITER_KUBECONTEXT_SUFFIX, LP_COLOR_KUBECONTEXT, and LP_MARK_KUBECONTEXT.
 # New in version 2.1.
 # Default: ""
-LP_DELIMITER_KUBECONTEXT_PREFIX="arn:aws:eks:eu-west-1:125363069638:cluster/EchoboxEKS-"
+LP_DELIMITER_KUBECONTEXT_PREFIX="/EchoboxEKS-"
 
 # LP_DELIMITER_KUBECONTEXT_SUFFIX: Delimiter to shorten the Kubernetes context by removing a suffix.
 # Usage example:
