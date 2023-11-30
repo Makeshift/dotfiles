@@ -21,9 +21,9 @@ alias forget='history -d $((HISTCMD - 1))'                                # Forg
 alias mkdir='mkdir -pv'          # Makes parent directories as well
 alias df='df -H'                 # Makes df human readable by default
 alias rm='rm -I --preserve-root' # Prompt if removing more than 3 files or if recursive, also don't let me delete root
-alias wget='wget -c'             # Allows me to resume wget downloads
 alias less="less -r"             # Interpret colours with less
 alias wget='wget -c --content-disposition' # Make wget grab actual filenames
+alias lens='open-lens'           # Lens but not the annoying paid version
 
 # Override 'chezmoi cd' to go to the chezmoi dir instead of launching a new shell
 function chezmoi() {
