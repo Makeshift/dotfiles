@@ -1,5 +1,8 @@
 #bind c screen bash -ic 'HISTFILE=~/.bash_history.${WINDOW} bash'
 #bind ^C screen bash -ic 'HISTFILE=~/.bash_history.${WINDOW} bash'
+# Enable mouse scrolling
+termcapinfo xterm* ti@:te@
+
 startup_message off
 defscrollback 32000
 defutf8 on

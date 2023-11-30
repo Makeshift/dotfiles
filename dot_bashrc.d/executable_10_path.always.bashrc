@@ -3,6 +3,8 @@
 # Array of paths to add to PATH if they exist
 # Added in reverse order so that the first path in the array is the first path
 path_array=(
+  "${KREW_ROOT:-$HOME/.krew}/bin"
+  "/usr/local/texlive/2023/bin/x86_64-linux"
   "$HOME/.bun/bin"
   "$HOME/bin"
   "$HOME/work_bin"

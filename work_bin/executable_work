@@ -141,8 +141,10 @@ export CDK_DEFAULT_ACCOUNT=$CDK_DEFAULT_ACCOUNT
 export CDK_DEFAULT_REGION=$CDK_DEFAULT_REGION
 export CODEARTIFACT_AUTH_TOKEN=\"$CODEARTIFACT_AUTH_TOKEN\"
 alias profiles=\"cat $profile_list_file | column -ts $'\\t'\"
+export AWS_PROFILE=$AWS_DEFAULT_PROFILE
 " >> "$source_me_file"
 
+wait
 
 . "$source_me_file"
 echo -e "${Cyan}All done! Type ${Green}source $source_me_file${Cyan} to set up your shell${R}"
