@@ -128,6 +128,7 @@ done < "$pidfile"
 
 # Grab a CodeArtifact auth token
 CODEARTIFACT_AUTH_TOKEN=$(aws --profile shared-code-artifacts codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)
+npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-cdk/:_authToken "$CODEARTIFACT_AUTH_TOKEN"
 # Set a default profile
 AWS_DEFAULT_PROFILE=original-main-account
 CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
