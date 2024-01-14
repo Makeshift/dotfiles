@@ -3,5 +3,4 @@ dotfiles.code-workspace
 .vscode
 .ssh/known_hosts
 .ssh/id_*
-.ssh/id_*.pub
 test
