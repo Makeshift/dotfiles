@@ -27,6 +27,8 @@ sso_start_url = https://echobox.awsapps.com/start#
 sso_registration_scopes = sso:account:access
 sso_region = eu-west-1
 region = eu-west-1
+cli_auto_prompt = on-partial
+tcp_keepalive = true
 "
 config_dir="$HOME/.aws"
 config_file="$config_dir/config"
