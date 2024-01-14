@@ -2,7 +2,6 @@ Readme.md
 dotfiles.code-workspace
 .vscode
 .ssh/known_hosts
-.ssh/config
 .ssh/id_*
 .ssh/id_*.pub
 test

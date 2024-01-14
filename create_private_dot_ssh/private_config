@@ -1,0 +1,23 @@
+Host *
+    ForwardAgent yes
+    Compression yes
+    StrictHostKeyChecking no
+    ServerAliveInterval 10
+    TCPKeepAlive yes
+
+Host home
+    HostName home.makeshift.ninja
+    User connor
+    ForwardAgent yes
+
+Host 172.16.0.53 subzero
+    Hostname 172.16.0.53
+    User connor
+    ForwardAgent yes
+
+Host blackbox
+    HostName 172.16.0.50
+
+host i-* mi-* codebuild:*
+    ProxyCommand ~/.ssh/aws-ssm-ec2-proxy-command.sh %h %r %p ~/.ssh/id_ed25519.pub
+    StrictHostKeyChecking no
