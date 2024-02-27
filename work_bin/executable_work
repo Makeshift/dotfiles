@@ -18,18 +18,21 @@
 # - For each profile, it:
 #   - Creates an alias to switch to that profile
 
-filter_out_profiles=("ace-test-awsreadonlyaccess" "tracker-awsreadonlyaccess" "echobox-test-account-awsreadonlyaccess" "email-service" "email-service-awsreadonlyaccess" "client-vpn-awsreadonlyaccess" "benchmarks-awsreadonlyaccess" "original-main-account-awsreadonlyaccess" "cors-proxy-awsreadonlyaccess" "echobox-root-awsreadonlyaccess" "shared-code-artifacts-awsreadonlyaccess" "newsletters-awsreadonlyaccess" "newsletters-optimisation-awsreadonlyaccess")
+filter_out_profiles=("ace-test-awsreadonlyaccess" "tracker-awsreadonlyaccess" "echobox-test-account-awsreadonlyaccess" "email-service-awsreadonlyaccess" "client-vpn-awsreadonlyaccess" "benchmarks-awsreadonlyaccess" "original-main-account-awsreadonlyaccess" "cors-proxy-awsreadonlyaccess" "echobox-root-awsreadonlyaccess" "shared-code-artifacts-awsreadonlyaccess" "newsletters-awsreadonlyaccess" "newsletters-optimisation-awsreadonlyaccess")
 
 unset AWS_DEFAULT_PROFILE AWS_PROFILE # If this is set, AWS will try to use it before we've actually made it
 export AWS_DEFAULT_REGION=eu-west-1
-config_file_default_content="[sso-session echobox]
-sso_start_url = https://echobox.awsapps.com/start#
+config_file_default_content="
+# New sso-session format
+[sso-session echobox]
+sso_start_url = https://echobox.awsapps.com/start
 sso_registration_scopes = sso:account:access
 sso_region = eu-west-1
 region = eu-west-1
 cli_auto_prompt = on-partial
 tcp_keepalive = true
 "
+
 config_dir="$HOME/.aws"
 config_file="$config_dir/config"
 profile_list_file="$config_dir/profile_list"
@@ -53,13 +56,10 @@ Green="\033[0;32m"
 # Get the user to login via SSO
 aws sso login --no-browser --sso-session echobox
 
-# Start yawsso syncing in the background
-yawsso &
-
 # `aws sso list-accounts` requires an `--access-token`, despite the access token being available in the cache
 #  so we need to go and get it from the cache ourselves
 # aws/aws-cli#5057
-sso_token_file=$(command grep -rl "startUrl" ~/.aws/sso/cache/*)
+sso_token_file=$(command grep -rl "start" ~/.aws/sso/cache/*)
 sso_access_token=$(jq -r ".accessToken" < "$sso_token_file")
 
 aws sso list-accounts --access-token "$sso_access_token" | jq -c '.accountList[]' | while read -r account; do
@@ -95,7 +95,20 @@ aws sso list-accounts --access-token "$sso_access_token" | jq -c '.accountList[]
 sso_session = echobox
 sso_account_id = $account_id
 sso_role_name = $role_name
+cli_auto_prompt = on-partial
+tcp_keepalive = true
 " >> "$config_file"
+#         echo -e "${Cyan}Creating legacy profile ${Green}$profile_name${Cyan} for account ${Green}$account_name${Cyan} with role ${Green}$role_name${R}"
+#         echo -e "# Legacy SSO creds - Use 'aws sso login --profile legacy-$profile_name' to get credentials
+# [profile legacy-$profile_name]
+# sso_start_url = https://echobox.awsapps.com/start
+# sso_region = eu-west-1
+# sso_account_id = $account_id
+# sso_role_name = $role_name
+# region = eu-west-1
+# cli_auto_prompt = on-partial
+# tcp_keepalive = true
+# " >> "$config_file"
 
         # Create an alias to switch to this profile
         echo "alias ${profile_name}=\"export AWS_PROFILE=${profile_name}\"" >> "$source_me_file"
@@ -117,6 +130,9 @@ sso_role_name = $role_name
         fi
     done
 done
+
+# Get legacy credentials
+yawsso -d &
 
 # the wait builtin only works if it's a child process, and our shell shenanigans above breaks that
 function wait_on_pid() {

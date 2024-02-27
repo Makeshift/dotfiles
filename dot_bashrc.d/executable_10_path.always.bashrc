@@ -11,7 +11,6 @@ path_array=(
   "$HOME/bin"
   "$HOME/work_bin"
   "$HOME/.local/bin"
-  # for vagrant
   "/mnt/c/Program Files/Oracle/VirtualBox"
   "$HOME/go/bin"
   "$HOME/.cargo/bin"
