@@ -1,6 +1,7 @@
 # This file contains an array of apps to get on demand, in the format "app_name:github_user/repo"
 # Creates an alias for each app that isn't already in your path, and if you run the command
 #  it will install it
+# TODO do this in a chezmoi config file and use generate eget's config file
 fastfetch:fastfetch-cli/fastfetch
 bat:sharkdp/bat
 container-diff:GoogleContainerTools/container-diff

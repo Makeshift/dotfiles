@@ -31,6 +31,7 @@ sso_region = eu-west-1
 region = eu-west-1
 cli_auto_prompt = on-partial
 tcp_keepalive = true
+duration_seconds = 43200
 "
 
 config_dir="$HOME/.aws"
@@ -97,6 +98,7 @@ sso_account_id = $account_id
 sso_role_name = $role_name
 cli_auto_prompt = on-partial
 tcp_keepalive = true
+duration_seconds = 43200
 " >> "$config_file"
 #         echo -e "${Cyan}Creating legacy profile ${Green}$profile_name${Cyan} for account ${Green}$account_name${Cyan} with role ${Green}$role_name${R}"
 #         echo -e "# Legacy SSO creds - Use 'aws sso login --profile legacy-$profile_name' to get credentials
@@ -131,7 +133,7 @@ tcp_keepalive = true
     done
 done
 
-# Get legacy credentials
+# Get legacy credentials in the background
 yawsso -d &
 
 # the wait builtin only works if it's a child process, and our shell shenanigans above breaks that
@@ -147,6 +149,7 @@ done < "$pidfile"
 # Grab a CodeArtifact auth token
 CODEARTIFACT_AUTH_TOKEN=$(aws --profile shared-code-artifacts codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)
 npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-cdk/:_authToken "$CODEARTIFACT_AUTH_TOKEN"
+yarn config set -H npmScopes.echobox.npmAuthToken "$(aws codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)"
 # Set a default profile
 AWS_DEFAULT_PROFILE=original-main-account
 CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)

@@ -1,0 +1,8 @@
+#!/bin/bash
+echo "Fast mode enabled, skipping regenerating profiles"
+aws sso login --no-browser --sso-session echobox
+yawsso -d &
+CODEARTIFACT_AUTH_TOKEN=$(aws --profile shared-code-artifacts codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)
+npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-cdk/:_authToken "$CODEARTIFACT_AUTH_TOKEN"
+yarn config set -H npmScopes.echobox.npmAuthToken "$(aws codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)"
+wait

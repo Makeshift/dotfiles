@@ -1,0 +1,3 @@
+# According to the comments in Ubuntu's default .profile, bash
+#  won't read this file if ~/.bash_profile exists
+# That seems to be a straight up lie though.

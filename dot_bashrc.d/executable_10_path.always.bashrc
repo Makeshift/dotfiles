@@ -7,6 +7,7 @@ path_array=(
   "/opt/OpenLens"
   "${KREW_ROOT:-$HOME/.krew}/bin"
   "/usr/local/texlive/2023/bin/x86_64-linux"
+  "$HOME/.pulumi/bin"
   "$HOME/.bun/bin"
   "$HOME/bin"
   "$HOME/work_bin"

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# .bashrc is ran during an interactive shell, eg bash -i
+# it is not ran during a login shell, eg bash -l (unless sourced by .bash_profile)
+
 # Get execution time of each command - Useful for debugging why bashrc is slow
 # N=$(date +%s%N)
 # export PS4='+[$(((`date +%s%N`-$N)/1000000))ms][${BASH_SOURCE}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'

@@ -1,0 +1,8 @@
+# .bash_profile is ran first during a login shell, eg bash -l
+# it is not ran during an interactive shell, eg bash -i
+# but it is ran during an interactive login shell, eg bash -li or opening a new WSL window
+# If we're trying to ssh somewhere via a bash script via WSL, we want bash -lc '...' which will run .bash_profile
+#  which will then run .bashrc, which will check if we're interactive (which we aren't) and then run the .always.bashrc scripts
+if [ -f "$HOME/.bashrc" ]; then
+  source "$HOME/.bashrc"
+fi
