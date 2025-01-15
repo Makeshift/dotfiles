@@ -31,6 +31,11 @@
 ################################################################################
 set -eu
 
+args="$@"
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+trap 'echo "Calling fallback..." ; $SCRIPT_DIR/aws-ssm-ec2-proxy-command-fallback.sh' ERR
+
 REGION_SEPARATOR='--'
 
 ec2_instance_id="$1"

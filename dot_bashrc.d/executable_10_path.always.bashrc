@@ -20,6 +20,7 @@ path_array=(
   "$HOME/.config/yarn/global/node_modules/.bin"
   "/usr/bin"
   "/usr/local/bin"
+  "/mnt/c/bin"
 )
 
 # Add paths to PATH if they exist and aren't already in PATH
