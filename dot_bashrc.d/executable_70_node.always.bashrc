@@ -1,7 +1,7 @@
 #export NODE_OPTIONS=--max_old_space_size=16384
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 
 #
 # Run 'nvm use' automatically every time there's
@@ -9,11 +9,11 @@ export NVM_DIR="$HOME/.nvm"
 # version when entering a directory without .nvmrc
 #
 enter_directory() {
-  if [[ $PWD == $PREV_PWD ]]; then
+  if [[ $PWD == "$PREV_PWD" ]]; then
     return
   fi
 
-  if [[ "$PWD" =~ "$PREV_PWD" && ! -f ".nvmrc" ]]; then
+  if [[ "$PWD" =~ $PREV_PWD && ! -f ".nvmrc" ]]; then
     return
   fi
 
@@ -27,4 +27,9 @@ enter_directory() {
   fi
 }
 
-export PROMPT_COMMAND="$PROMPT_COMMAND; enter_directory"
+if [[ -n "$PROMPT_COMMAND" ]]; then
+  export PROMPT_COMMAND="$PROMPT_COMMAND; enter_directory"
+else
+  export PROMPT_COMMAND="enter_directory"
+fi
+
