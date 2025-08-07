@@ -1,7 +1,5 @@
 #export NODE_OPTIONS=--max_old_space_size=16384
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
+
 
 #
 # Run 'nvm use' automatically every time there's
@@ -32,4 +30,3 @@ if [[ -n "$PROMPT_COMMAND" ]]; then
 else
   export PROMPT_COMMAND="enter_directory"
 fi
-

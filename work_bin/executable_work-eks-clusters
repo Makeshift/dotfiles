@@ -1,0 +1,14 @@
+#!/bin/bash
+if command -v jq >/dev/null 2>&1; then
+  for profile in $(aws configure list-profiles); do
+    echo "Checking $profile..."
+    clusters="$(aws --region eu-west-1 --profile "$profile" eks list-clusters 2>/dev/null)"
+    if [ $? = 0 ]; then
+      echo "$clusters" | jq -r ".clusters[]" | while read -r cluster; do
+        aws --region eu-west-1 --profile "$profile" eks update-kubeconfig --name "$cluster"
+      done
+    fi
+  done
+else
+  echo "This command needs 'jq' installed in order to run! Go install it!"
+fi

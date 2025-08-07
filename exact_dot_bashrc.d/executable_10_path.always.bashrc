@@ -29,3 +29,4 @@ for ((i=${#path_array[@]}-1; i>=0; i--)); do
     export PATH="${actual}:$PATH"
   fi
 done
+

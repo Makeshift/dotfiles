@@ -16,7 +16,7 @@ done
 
 # If we're in an interactive shell, run special scripts in ~/.bashrc.d/ that have a .interactive.bashrc extension
 # shellcheck disable=SC1090
-if [[ $- == *i* ]]; then
+if [[ $- == *i* && "$TERM_PROGRAM" != "vscode" ]]; then
   for file in ~/.bashrc.d/*.interactive.bashrc; do
     source "$file"
   done

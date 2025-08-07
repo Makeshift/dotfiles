@@ -1,0 +1,14 @@
+#!/bin/bash
+# Requires a modified version of granted from makeshift/granted
+granted sso populate --verbose \
+  --default-region eu-west-1 --sso-session-name echobox \
+  --no-credential-process --profile-template '{{.AccountName | lower}}' \
+  --sso-region eu-west-1 \
+  --prefer-role '^AWSAdministratorAccess$' \
+  --prefer-role '^AWSAdministratorAccess-.+' \
+  --prefer-role '.+Admin.+' \
+  --prefer-role '.+Write.+' \
+  --prefer-role 'Developers.+' \
+  --prefer-role '.+Developers.+' \
+  --prefer-role '.+Read.+' \
+  https://echobox.awsapps.com/start

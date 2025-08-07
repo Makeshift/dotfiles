@@ -1,7 +1,8 @@
 [alias]
 
-    # View abbreviated SHA, description, and history graph of the latest 20 commits.
-    l = log --pretty=oneline -n 20 --graph --abbrev-commit
+    graph = log --all --graph --decorate --oneline
+
+    l = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
 
     # View the current working tree status using the short format.
     s = status -s
@@ -78,8 +79,26 @@
     # Show most recently changed branches first.
     sort = -committerdate
 
-[core]
+[column]
+    ui = auto
 
+[tag]
+    sort = -version:refname
+
+[interactive]
+    diffFilter = "diff-so-fancy --patch"
+
+[maintenance]
+    auto = true
+    strategy = incremental
+
+[rerere]
+    enabled = true
+    autoUpdate = true
+
+[core]
+    pager = "diff-so-fancy | less --tabs=2 -RF"
+    compression = 9
     # Use custom `.gitignore` and `.gitattributes`.
     excludesfile = ~/.gitignore
     attributesfile = ~/.gitattributes
@@ -135,6 +154,7 @@
     # Detect copies as well as renames.
     renames = copies
 	colorMoved = zebra
+	algorithm = histogram
 
 [diff "bin"]
 
@@ -170,9 +190,9 @@
 [init]
     templateDir = "~/.git-template"
     defaultBranch = master
-
-{{- if (hasKey . "gitconfig_user_signingkey") }}
 [commit]
+    verbose = true
+{{- if (hasKey . "gitconfig_user_signingkey") }}
 	gpgsign = true
 [gpg]
     format = ssh
