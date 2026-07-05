@@ -1,0 +1,400 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat >&2 <<'EOF'
+Usage:
+  docker-image-size <image-ref> [platform] [--compare <image-ref>]
+
+Examples:
+  docker-image-size smallified-actions-runner:latest
+  docker-image-size ghcr.io/owner/image:tag linux/amd64
+  docker-image-size image1:latest --compare image2:latest
+  docker-image-size image1:latest linux/arm64 --compare image2:latest
+
+Requires: docker, jq, python3, gzip, awk
+Optional: zstd (for zstd-compressed layers)
+EOF
+}
+
+# --- Arg parsing ---
+
+pos_args=()
+compare_image=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --compare) compare_image="$2"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    -*) echo "Unknown option: $1" >&2; usage; exit 1 ;;
+    *) pos_args+=("$1"); shift ;;
+  esac
+done
+
+image="${pos_args[0]:-}"
+platform="${pos_args[1]:-linux/amd64}"
+
+if [[ -z "$image" ]]; then usage; exit 1; fi
+
+for cmd in docker jq python3 gzip awk wc; do
+  command -v "$cmd" >/dev/null 2>&1 || { echo "Missing required command: $cmd" >&2; exit 2; }
+done
+
+# --- Helper functions ---
+
+human_iec() {
+  python3 - "$1" <<'PY'
+import sys
+n = float(sys.argv[1])
+units = ["B", "KiB", "MiB", "GiB", "TiB"]
+i = 0
+while n >= 1024 and i < len(units) - 1:
+    n /= 1024
+    i += 1
+print(f"{n:.2f} {units[i]}")
+PY
+}
+
+pct_change() {
+  python3 - "$1" "$2" <<'PY'
+import sys
+a, b = float(sys.argv[1]), float(sys.argv[2])
+if a == 0:
+    print("n/a")
+else:
+    pct = (b - a) / a * 100
+    sign = "+" if pct >= 0 else ""
+    print(f"{sign}{pct:.1f}%")
+PY
+}
+
+delta_human() {
+  python3 - "$1" "$2" <<'PY'
+import sys
+a, b = float(sys.argv[1]), float(sys.argv[2])
+d = b - a
+sign = "+" if d > 0 else ("-" if d < 0 else "")
+n = abs(d)
+units = ["B", "KiB", "MiB", "GiB", "TiB"]
+i = 0
+while n >= 1024 and i < len(units) - 1:
+    n /= 1024
+    i += 1
+print(f"{sign}{n:.2f} {units[i]}")
+PY
+}
+
+# Recursively resolve an OCI blob to a platform-specific manifest.
+resolve_manifest_blob() {
+  local blob="$1"
+  local target_os="$2"
+  local target_arch="$3"
+  local content
+  content="$(cat "$blob")"
+
+  if jq -e '.layers and (.layers | type == "array")' >/dev/null <<<"$content"; then
+    echo "$content"
+    return
+  fi
+
+  if jq -e '.manifests and (.manifests | type == "array")' >/dev/null <<<"$content"; then
+    local digest
+    digest="$(jq -r --arg os "$target_os" --arg arch "$target_arch" \
+      '.manifests[] | select(.platform.os == $os and .platform.architecture == $arch) | .digest' \
+      <<<"$content" | head -1)"
+
+    if [[ -z "$digest" ]]; then
+      digest="$(jq -r \
+        '.manifests[] | select((.platform.architecture // "unknown") != "unknown") | .digest' \
+        <<<"$content" | head -1)"
+    fi
+
+    if [[ -z "$digest" ]]; then
+      echo "Could not find a usable manifest for ${target_os}/${target_arch}" >&2
+      exit 4
+    fi
+
+    resolve_manifest_blob "${blobs_dir}/${digest#sha256:}" "$target_os" "$target_arch"
+    return
+  fi
+
+  echo "Unexpected manifest format in blob ${blob}" >&2
+  exit 4
+}
+
+# --- Cleanup ---
+
+TMP_DIR=""
+CONTAINER_ID=""
+RESULT_DIR_1=""
+RESULT_DIR_2=""
+PULLED_IMAGES=()
+
+cleanup() {
+  [[ -n "${CONTAINER_ID:-}" ]] && { docker rm "$CONTAINER_ID" >/dev/null 2>&1 || true; CONTAINER_ID=""; }
+  [[ -n "${TMP_DIR:-}" && -d "${TMP_DIR:-}" ]] && { rm -rf "$TMP_DIR"; TMP_DIR=""; }
+  [[ -n "${RESULT_DIR_1:-}" && -d "${RESULT_DIR_1:-}" ]] && { rm -rf "$RESULT_DIR_1"; RESULT_DIR_1=""; }
+  [[ -n "${RESULT_DIR_2:-}" && -d "${RESULT_DIR_2:-}" ]] && { rm -rf "$RESULT_DIR_2"; RESULT_DIR_2=""; }
+  for pulled_img in "${PULLED_IMAGES[@]:-}"; do
+    [[ -n "$pulled_img" ]] && { docker rmi "$pulled_img" >/dev/null 2>&1 || true; }
+  done
+  PULLED_IMAGES=()
+}
+
+trap cleanup EXIT
+
+# --- Image analysis ---
+# analyze_image <image> <platform> <result_dir>
+# Writes metrics.env and history.tsv to <result_dir>.
+
+analyze_image() {
+  local img="$1"
+  local plat="$2"
+  local result_dir="$3"
+
+  local os="${plat%%/*}"
+  local rest="${plat#*/}"
+  local arch="${rest%%/*}"
+
+  if docker image inspect "$img" >/dev/null 2>&1; then
+    echo "Using locally cached image ${img}." >&2
+  else
+    echo "Pulling ${img} for platform ${plat}..." >&2
+    docker pull --platform "$plat" "$img" >&2
+    PULLED_IMAGES+=("$img")
+  fi
+
+  echo "Inspecting ${img} (${plat})..." >&2
+
+  TMP_DIR="$(mktemp -d)"
+  echo "Extracting image blobs..." >&2
+  docker save "$img" | tar -xC "$TMP_DIR"
+  blobs_dir="${TMP_DIR}/blobs/sha256"
+
+  local top_digest manifest media_type config_digest layer_count config_size
+  top_digest="$(jq -r '.manifests[0].digest' "${TMP_DIR}/index.json")"
+  manifest="$(resolve_manifest_blob "${blobs_dir}/${top_digest#sha256:}" "$os" "$arch")"
+  media_type="$(jq -r '.mediaType // "unknown"' <<<"$manifest")"
+  config_digest="$(jq -r '.config.digest' <<<"$manifest")"
+  layer_count="$(jq -r '.layers | length' <<<"$manifest")"
+  config_size="$(wc -c < "${blobs_dir}/${config_digest#sha256:}" | awk '{print $1}')"
+
+  printf "Calculating layer sizes " >&2
+  local -a layer_compressed_arr=() layer_uncompressed_arr=()
+  local uncompressed_layers_size=0 compressed_layers_size=0
+
+  while IFS=$'\t' read -r _idx digest layer_media_type; do
+    printf "." >&2
+    local blob="${blobs_dir}/${digest#sha256:}"
+    local compressed_size uncompressed_size
+    compressed_size="$(wc -c < "$blob" | awk '{print $1}')"
+
+    case "$layer_media_type" in
+      *+gzip|*gzip*)
+        uncompressed_size="$(gzip -dc < "$blob" | wc -c | awk '{print $1}')" ;;
+      *+zstd|*zstd*)
+        command -v zstdcat >/dev/null 2>&1 || { echo >&2; echo "Layer is zstd-compressed but zstdcat not installed" >&2; exit 3; }
+        uncompressed_size="$(zstdcat < "$blob" | wc -c | awk '{print $1}')" ;;
+      application/vnd.oci.image.layer.v1.tar|application/vnd.docker.image.rootfs.diff.tar)
+        uncompressed_size="$compressed_size" ;;
+      *)
+        uncompressed_size="$(gzip -dc < "$blob" | wc -c | awk '{print $1}')" ;;
+    esac
+
+    compressed_layers_size="$((compressed_layers_size + compressed_size))"
+    uncompressed_layers_size="$((uncompressed_layers_size + uncompressed_size))"
+    layer_compressed_arr+=("$compressed_size")
+    layer_uncompressed_arr+=("$uncompressed_size")
+  done < <(jq -r '.layers | to_entries[] | [(.key+1), .value.digest, (.value.mediaType // "unknown")] | @tsv' <<<"$manifest")
+  echo >&2
+
+  local compressed_total_size="$((config_size + compressed_layers_size))"
+
+  printf "Calculating merged filesystem export size..." >&2
+  CONTAINER_ID="$(docker create --platform "$plat" "$img" 2>/dev/null)"
+  local merged_export_size
+  merged_export_size="$(docker export "$CONTAINER_ID" | wc -c | awk '{print $1}')"
+  docker rm "$CONTAINER_ID" >/dev/null 2>&1
+  CONTAINER_ID=""
+  echo >&2
+
+  rm -rf "$TMP_DIR"
+  TMP_DIR=""
+
+  # Docker metadata
+  local this_image_id docker_virtual_str="" docker_shared_str="" docker_unique_str=""
+  local shared_count=0 unique_count=0 n_this_layers=0
+  this_image_id="$(docker image inspect "$img" --format '{{.Id}}')"
+  local this_image_id_short="${this_image_id#sha256:}"
+
+  if docker_df_json="$(docker system df -v --format json 2>/dev/null)"; then
+    local image_df
+    image_df="$(jq -r --arg id "$this_image_id" '.Images[] | select(.ID == $id)' <<<"$docker_df_json")"
+    if [[ -n "$image_df" ]]; then
+      docker_virtual_str="$(jq -r '.Size'       <<<"$image_df")"
+      docker_shared_str="$(jq  -r '.SharedSize' <<<"$image_df")"
+      docker_unique_str="$(jq  -r '.UniqueSize' <<<"$image_df")"
+    fi
+  fi
+
+  local -a this_layers=()
+  readarray -t this_layers < <(docker image inspect "$img" --format '{{json .RootFS.Layers}}' | jq -r '.[]')
+  n_this_layers="${#this_layers[@]}"
+
+  local other_layers_tmp
+  other_layers_tmp="$(mktemp)"
+  while IFS=' ' read -r img_id img_tag; do
+    [[ "$img_id" == "${this_image_id_short:0:12}" ]] && continue
+    [[ "$img_tag" == "<none>:<none>" ]] && continue
+    docker image inspect "$img_id" --format '{{json .RootFS.Layers}}' 2>/dev/null \
+      | jq -r '.[]' 2>/dev/null || true
+  done < <(docker image ls --format '{{.ID}} {{.Repository}}:{{.Tag}}') > "$other_layers_tmp"
+
+  for layer in "${this_layers[@]}"; do
+    grep -qF "$layer" "$other_layers_tmp" 2>/dev/null && ((shared_count++)) || true
+  done
+  rm -f "$other_layers_tmp"
+  unique_count=$((n_this_layers - shared_count))
+
+  # Build layer history TSV: compressed_bytes<TAB>uncompressed_bytes<TAB>instruction
+  # "-" for compressed/uncompressed means no OCI layer (metadata-only instruction).
+  local oci_idx=$((layer_count - 1))
+  local history_tsv=""
+  while IFS=$'\t' read -r h_size h_cmd; do
+    h_cmd="$(sed \
+      -e 's|^RUN /bin/sh -c |RUN |' \
+      -e 's|^/bin/sh -c #(nop) *||' \
+      -e 's|^RUN #(nop) *||' \
+      -e 's|^/bin/sh -c |RUN |' \
+      <<< "$h_cmd")"
+    if [[ "$h_size" == "0B" ]]; then
+      history_tsv+="-"$'\t'"-"$'\t'"${h_cmd}"$'\n'
+    else
+      local c="${layer_compressed_arr[$oci_idx]:-0}"
+      local u="${layer_uncompressed_arr[$oci_idx]:-0}"
+      history_tsv+="${c}"$'\t'"${u}"$'\t'"${h_cmd}"$'\n'
+      (( oci_idx-- )) || true
+    fi
+  done < <(docker history --no-trunc --format '{{.Size}}\t{{.CreatedBy}}' "$img")
+
+  cat > "${result_dir}/metrics.env" <<ENV
+MEDIA_TYPE=${media_type}
+LAYER_COUNT=${layer_count}
+COMPRESSED_TOTAL=${compressed_total_size}
+UNCOMPRESSED_LAYERS=${uncompressed_layers_size}
+MERGED_EXPORT=${merged_export_size}
+DOCKER_VIRTUAL=${docker_virtual_str}
+DOCKER_SHARED=${docker_shared_str}
+DOCKER_UNIQUE=${docker_unique_str}
+SHARED_COUNT=${shared_count}
+UNIQUE_COUNT=${unique_count}
+N_LAYERS=${n_this_layers}
+ENV
+  printf "%s" "$history_tsv" > "${result_dir}/history.tsv"
+}
+
+load_metrics() {
+  local result_dir="$1"
+  local prefix="$2"
+  local key val line
+  while IFS= read -r line; do
+    key="${line%%=*}"
+    val="${line#*=}"
+    [[ -z "$key" ]] && continue
+    printf -v "${prefix}${key}" "%s" "$val"
+  done < "${result_dir}/metrics.env"
+}
+
+# --- Run analysis ---
+
+RESULT_DIR_1="$(mktemp -d)"
+analyze_image "$image" "$platform" "$RESULT_DIR_1"
+load_metrics "$RESULT_DIR_1" ""
+
+if [[ -n "$compare_image" ]]; then
+  RESULT_DIR_2="$(mktemp -d)"
+  echo >&2
+  analyze_image "$compare_image" "$platform" "$RESULT_DIR_2"
+  load_metrics "$RESULT_DIR_2" "B_"
+fi
+
+# --- Output ---
+
+if [[ -z "$compare_image" ]]; then
+  echo
+  echo "Image size report"
+  echo "================="
+  echo "Image:    ${image}"
+  echo "Platform: ${platform}"
+  echo "Manifest: ${MEDIA_TYPE}"
+  echo "Layers:   ${LAYER_COUNT}"
+  echo
+  printf "%-30s %s\n" "Compressed (registry/transfer):" "$(human_iec "$COMPRESSED_TOTAL")"
+  printf "%-30s %s\n" "Uncompressed layers:" "$(human_iec "$UNCOMPRESSED_LAYERS")"
+  printf "%-30s %s\n" "Merged filesystem export:" "$(human_iec "$MERGED_EXPORT")"
+  if [[ -n "${DOCKER_VIRTUAL:-}" ]]; then
+    printf "%-30s %s\n" "Virtual size (docker image ls):" "$DOCKER_VIRTUAL"
+    printf "%-30s %s  (%s/%s layers)\n" "Shared with other images:" "$DOCKER_SHARED" "$SHARED_COUNT" "$N_LAYERS"
+    printf "%-30s %s  (%s/%s layers)\n" "Unique to this image:" "$DOCKER_UNIQUE" "$UNIQUE_COUNT" "$N_LAYERS"
+  fi
+
+  echo
+  echo "Layer history"
+  echo "============="
+  printf "%-14s %-14s %s\n" "Compressed" "Uncompressed" "Instruction"
+  printf "%-14s %-14s %s\n" "--------------" "--------------" "-----------"
+  while IFS=$'\t' read -r c u cmd; do
+    [[ -z "$c" ]] && continue
+    if [[ "$c" == "-" ]]; then
+      printf "%-14s %-14s %s\n" "-" "-" "${cmd:0:120}"
+    else
+      printf "%-14s %-14s %s\n" "$(human_iec "$c")" "$(human_iec "$u")" "${cmd:0:120}"
+    fi
+  done < "${RESULT_DIR_1}/history.tsv"
+
+else
+  echo
+  echo "Comparison: ${image}  vs  ${compare_image}"
+  echo "Platform: ${platform}"
+  echo
+
+  compare_row() {
+    local label="$1" a="$2" b="$3"
+    printf "  %-32s  %-14s  %-14s  %-14s  %s\n" \
+      "$label" \
+      "$(human_iec "$a")" \
+      "$(human_iec "$b")" \
+      "$(delta_human "$a" "$b")" \
+      "$(pct_change "$a" "$b")"
+  }
+
+  compare_row_int() {
+    local label="$1" a="$2" b="$3"
+    local delta=$(( b - a ))
+    local sign=""
+    [[ $delta -gt 0 ]] && sign="+"
+    printf "  %-32s  %-14s  %-14s  %-14s  %s\n" \
+      "$label" "$a" "$b" "${sign}${delta}" "$(pct_change "$a" "$b")"
+  }
+
+  printf "  %-32s  %-14s  %-14s  %-14s  %s\n" \
+    "Metric" "Image 1" "Image 2" "Delta" "Change"
+  printf "  %-32s  %-14s  %-14s  %-14s  %s\n" \
+    "--------------------------------" "--------------" "--------------" "--------------" "------"
+
+  compare_row    "Compressed (registry/transfer)" "$COMPRESSED_TOTAL"    "$B_COMPRESSED_TOTAL"
+  compare_row    "Uncompressed layers"            "$UNCOMPRESSED_LAYERS" "$B_UNCOMPRESSED_LAYERS"
+  compare_row    "Merged filesystem export"       "$MERGED_EXPORT"       "$B_MERGED_EXPORT"
+  compare_row_int "Layer count"                  "$LAYER_COUNT"         "$B_LAYER_COUNT"
+
+  if [[ -n "${DOCKER_VIRTUAL:-}" && -n "${B_DOCKER_VIRTUAL:-}" ]]; then
+    echo
+    printf "  %-32s  %-14s  %-14s\n" "" "Image 1" "Image 2"
+    printf "  %-32s  %-14s  %-14s\n" "Virtual size (docker image ls)" "$DOCKER_VIRTUAL" "$B_DOCKER_VIRTUAL"
+    printf "  %-32s  %-14s  %-14s\n" "Shared with other images" "$DOCKER_SHARED" "$B_DOCKER_SHARED"
+    printf "  %-32s  %-14s  %-14s\n" "Unique to this image" "$DOCKER_UNIQUE" "$B_DOCKER_UNIQUE"
+  fi
+
+  echo
+  echo "Image 1: ${image}"
+  echo "Image 2: ${compare_image}"
+fi

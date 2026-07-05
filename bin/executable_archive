@@ -6,7 +6,7 @@ Creates an .tar.xz archive of a file or folder
 Usage: ${0} <file or folder ...> [archive name]
 
 Arguments:
-  
+
 
 Depends on bash 4.3+
 TODO: Write this properly
@@ -28,7 +28,7 @@ function archive() {
       name="$(basename "$(PWD)").tar.xz"
     fi
     # Create the archive
-    tar -cJvf "$name" "${filelist[@]}"
+    tar -cJf "$name" "${filelist[@]}"
   else
     echo "'$1' is not a valid file or directory!"
   fi

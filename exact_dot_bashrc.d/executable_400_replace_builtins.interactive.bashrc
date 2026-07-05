@@ -1,20 +1,21 @@
 #### Replace built-ins right at the end so other scripts don't cause issues ####
 
 # Use ripgrep if it's available
-if command -v rg >/dev/null; then
-  alias grep=rg
-  # ripgrep is recursive by default
-  alias rgrep=rg
-  alias egrep='rg --pcre2'
-  alias fgrep='rg -F'
-else
-  alias grep='grep -r --color=auto'
-  alias rgrep='grep -r --color=auto'
-  alias egrep='grep -E --color=auto'
-  alias fgrep='grep -F --color=auto'
-fi
+#if command -v rg >/dev/null; then
+#  alias grep=rg
+#  # ripgrep is recursive by default
+#  alias rgrep=rg
+#  alias egrep='rg --pcre2'
+#  alias fgrep='rg -F'
+#else
 
-if command -v exa >/dev/null; then alias ls="exa -F"; fi # Use exa if it's available
+#fi
+# Disabled ^ I love ripgrep but replacing grep breaks too many things and results in weird behaviour
+alias rgrep='grep -r --color=auto'
+alias egrep='grep -E --color=auto'
+alias fgrep='grep -F --color=auto'
+
+if command -v eza >/dev/null; then alias ls="eza -F"; fi # Use eza if it's available
 
 if command -v bat >/dev/null; then
   export BAT_THEME="Solarized (dark)"

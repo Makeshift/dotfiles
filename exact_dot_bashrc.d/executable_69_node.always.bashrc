@@ -1,21 +1,37 @@
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" >/dev/null 2>&1
 
-# pnpm
 export PNPM_HOME="$HOME/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
+[[ ":$PATH:" != *":$PNPM_HOME:"* ]] && export PATH="$PNPM_HOME:$PATH"
 
-# If we have a .vscode-server dir in home, patch the node bin so it has moar ram
-if [[ -d "$HOME/.vscode-server/bin" ]]; then
+# Patch VS Code server's node binary to raise the memory limit
+if [[ -d "$HOME/.vscode-server/bin" ]] && runonce -i daily -n "$0$LINENO"; then
   while IFS= read -r -d '' node; do
-    if ! file "$node" | grep "ASCII text" > /dev/null; then
+    if ! file "$node" | grep -q "ASCII text"; then
       dir="$(dirname "$node")"
       mv "$node" "${dir}/_node"
-      echo -e '#!/bin/bash\nexec "'"${dir}/_node"'" --max-old-space-size=32768 "${@}"' > "$node"
+cat > "$node" <<EOF
+#!/usr/bin/env bash
+# Strip any --max-old-space-size occurrences (both --flag=value and --flag value)
+filtered_args=()
+skip_next=0
+for arg in "\$@"; do
+  if [ "\$skip_next" -eq 1 ]; then
+    skip_next=0
+    continue
+  fi
+  case "\$arg" in
+    --max-old-space-size)
+      skip_next=1 ;;        # drop the next value
+    --max-old-space-size=*)
+      ;;                    # drop --flag=value
+    *)
+      filtered_args+=("\$arg") ;;
+  esac
+done
+
+exec "${dir}/_node" --max-old-space-size=32768 "\${filtered_args[@]}"
+EOF
       chmod +x "$node"
     fi
   done < <(find "$HOME/.vscode-server/bin" -maxdepth 2 -iname node -print0)

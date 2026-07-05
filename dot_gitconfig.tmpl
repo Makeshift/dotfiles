@@ -123,6 +123,7 @@
     editor = {{ default "micro" (env "EDITOR") }}
 	autocrlf = false
 	eol = lf
+    sshCommand = ssh.exe
 
 [color]
 
@@ -176,7 +177,7 @@
     # https://git-scm.com/docs/git-config#git-config-pushdefault
     default = simple
     # Make `git push` push relevant annotated tags when pushing branches out.
-    followTags = true
+    # followTags = true
     autoSetupRemote = true
 [pull]
 	rebase = true
@@ -198,7 +199,7 @@
     format = ssh
 {{- if .is_wsl }}
 [gpg "ssh"]
-    program = /mnt/c/Users/{{ .windows_username }}/AppData/Local/1Password/app/8/op-ssh-sign.exe
+    program = "/mnt/c/Users/{{ .windows_username }}/AppData/Local/Microsoft/WindowsApps/op-ssh-sign.exe"
 {{- end }}
 {{- end }}
 [submodule]

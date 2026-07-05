@@ -2,16 +2,84 @@
 
 help_and_exit() {
     cat << EOF
-${0##*/} [options] COMMAND
+${0##*/} [options] [COMMAND]
 
-Run COMMAND but only once per interval. See '$HOME/.runonce-*' for lock files.
+Run COMMAND but only once per interval. See '$HOME/.cache/runonce/runonce-*' for lock files.
+
+Without COMMAND, use -n to check if interval has elapsed at a named location.
+Useful in if statements: if runonce -n mytask; then ...; fi
 
   options:
     -h, -?      help
-    -i MINS  	interval in minutes (default 480)
+    -i INTERVAL	interval in minutes or a duration (default 480)
+    -n NAME  	use NAME as lock identifier (enables if statement usage)
+
+INTERVAL accepts:
+    number of minutes: 480
+    minutes:           30m, 30min, 30mins, 30minute, 30minutes
+    hours:             2h, 2hr, 2hrs, 2hour, 2hours
+    days:              1d, 1day, 1days
+    weeks:             1w, 1week, 1weeks
+    aliases:           hourly, daily, weekly, monthly (30 days)
+
+EXAMPLES:
+  # Run a command once per interval
+  runonce echo "Hello"
+
+  # Use in if statement with explicit name
+  if runonce -n mytask; then echo "Running"; fi
+
+  # Automatic per-line tracking (in calling script):
+  if runonce -n "\$0\$LINENO"; then echo "Running"; fi
 EOF
 
     exit $1
+}
+
+parse_interval() {
+    local raw_interval
+    local amount
+
+    raw_interval="${1,,}"
+    raw_interval="${raw_interval//[[:space:]]/}"
+
+    case "$raw_interval" in
+    hourly)
+        interval=60
+        return
+        ;;
+    daily)
+        interval=1440
+        return
+        ;;
+    weekly)
+        interval=10080
+        return
+        ;;
+    monthly)
+        interval=43200
+        return
+        ;;
+    esac
+
+    if [[ "$raw_interval" =~ ^([0-9]+)$ ]]; then
+        interval="${BASH_REMATCH[1]}"
+    elif [[ "$raw_interval" =~ ^([0-9]+)(m|min|mins|minute|minutes)$ ]]; then
+        interval="${BASH_REMATCH[1]}"
+    elif [[ "$raw_interval" =~ ^([0-9]+)(h|hr|hrs|hour|hours)$ ]]; then
+        amount="${BASH_REMATCH[1]}"
+        interval=$((amount * 60))
+    elif [[ "$raw_interval" =~ ^([0-9]+)(d|day|days)$ ]]; then
+        amount="${BASH_REMATCH[1]}"
+        interval=$((amount * 1440))
+    elif [[ "$raw_interval" =~ ^([0-9]+)(w|week|weeks)$ ]]; then
+        amount="${BASH_REMATCH[1]}"
+        interval=$((amount * 10080))
+    else
+        echo "Error: invalid interval '$1'" >&2
+        echo "Run '${0##*/} -h' to see accepted interval formats." >&2
+        exit 1
+    fi
 }
 
 #
@@ -23,15 +91,18 @@ OPTIND=1        # reset in case getopts has been used previously in the shell
 
 # Initialize our own variables
 interval=480    # minutes
+name=""         # optional identifier
 
 # getops can't handle long options (--help) but can handle options clustering
 # (-vf FILE)
-while getopts "h?i:" opt; do
+while getopts "h?i:n:" opt; do
     case "$opt" in
     h|\?)
         help_and_exit 0
         ;;
     i)  interval=$OPTARG
+        ;;
+    n)  name=$OPTARG
         ;;
     esac
 done
@@ -40,10 +111,7 @@ done
 shift $((OPTIND-1))
 [ "$1" = "--" ] && shift
 
-# Run without arguments
-if [[ "X" == "X$@" ]]; then
-    help_and_exit 1
-fi
+parse_interval "$interval"
 
 #
 # MAIN
@@ -58,18 +126,42 @@ case $(uname) in
              ;;
 esac
 
-MYBASENAME="$(basename $(echo -n $@ | cut -d" " -f1))"
-
 mkdir -p "$HOME/.cache/runonce" &>/dev/null
 
+# If -n was provided, use it as a check (for if statements)
+if [[ -n "$name" ]]; then
+    if [[ $# -gt 0 ]]; then
+        echo "Error: cannot specify both -n NAME and COMMAND" >&2
+        exit 1
+    fi
+    name="$(echo -n "$name" | tr -dc '[:print:]' | tr -s '[:space:]/_' '-' | tr -dc 'a-zA-Z0-9._-')"
+    LOCK="$HOME/.cache/runonce/runonce-$name"
+    if [[ ! -e $LOCK ]]; then
+        touch $LOCK
+        exit 0
+    elif [[ -n "$(find $LOCK -mmin +$interval)" ]]; then
+        touch $LOCK
+        exit 0
+    else
+        exit 1
+    fi
+fi
+
+# Normal operation: run a command
+if [[ $# -eq 0 ]]; then
+    help_and_exit 1
+fi
+
+MYBASENAME="$(basename "$(echo -n "$*" | cut -d" " -f1)")"
+
 # MD5 checksums are used to support commands with switches (ex. ls -l)
-LOCK="$HOME/.cache/runonce/runonce-$MYBASENAME-$(echo -n $@|$MD5|cut -d" " -f1)"
+LOCK="$HOME/.cache/runonce/runonce-$MYBASENAME-$(echo -n "$*"|$MD5|cut -d" " -f1)"
 
 if [[ ! -e $LOCK ]]; then   # no lock - command run for the first time
     "$@"
     touch $LOCK
 else                        # lock exists
-    if [[ "`find $LOCK -mmin +$interval`" ]]; then
+    if [[ -n "$(find $LOCK -mmin +$interval)" ]]; then
         "$@"
         touch $LOCK
     fi

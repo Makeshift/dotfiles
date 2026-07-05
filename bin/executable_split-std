@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+# Create a GNU Screen session split vertically with live stdout on the left and stderr on the right
+# for an arbitrary command.
+#
+# Usage:
+#   screen-split-stdout-stderr.sh [--keep] [--title NAME] -- your_command arg1 arg2 ...
+#
+# Options:
+#   --keep, -k      Keep the screen session running after the command finishes (and keep logs).
+#   --title, -t     A custom base title for the screen session (default derived from the command).
+#
+# Notes:
+# - Requires: GNU screen, tail
+# - Recommended (for timely output): stdbuf (GNU coreutils). Without it, some programs buffer when
+#   writing to files, so updates may appear in chunks.
+# - The script tails two log files (stdout.log, stderr.log) so you can scroll back and review output.
+# - On completion, the script writes the exit code to both panes. If --keep is not set, the screen
+#   session will automatically close a moment after completion.
+
+set -Eeuo pipefail
+
+# ---------- arg parsing ----------
+KEEP=0
+TITLE=""
+
+print_usage() {
+  cat <<EOF
+Usage:
+  $(basename "$0") [--keep] [--title NAME] -- your_command arg1 arg2 ...
+
+Options:
+  --keep, -k      Keep the screen session running after the command finishes (and keep logs).
+  --title, -t     A custom base title for the screen session (default derived from the command).
+
+Example:
+  $(basename "$0") -- bash -c 'for i in {1..5}; do echo out \$i; echo err \$i 1>&2; sleep 1; done'
+EOF
+}
+
+if [[ $# -eq 0 ]]; then
+  print_usage
+  exit 1
+fi
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -k|--keep) KEEP=1; shift ;;
+    -t|--title)
+      [[ $# -ge 2 ]] || { echo "Error: --title requires a value" >&2; exit 1; }
+      TITLE="$2"; shift 2 ;;
+    --) shift; break ;;
+    -h|--help)
+      print_usage; exit 0 ;;
+    *) break ;;
+  esac
+done
+
+if [[ $# -eq 0 ]]; then
+  echo "Error: No command provided. Use -- to separate script options from your command." >&2
+  print_usage
+  exit 1
+fi
+
+# ---------- deps ----------
+if ! command -v screen >/dev/null 2>&1; then
+  echo "Error: GNU screen is required but not found in PATH." >&2
+  exit 1
+fi
+
+if ! command -v tail >/dev/null 2>&1; then
+  echo "Error: tail is required but not found in PATH." >&2
+  exit 1
+fi
+
+STDBUF=""
+if command -v stdbuf >/dev/null 2>&1; then
+  STDBUF="stdbuf -oL -eL"
+fi
+
+# ---------- temp/logs ----------
+# Portable mktemp (BSD/macOS requires -t)
+TMPDIR=""
+if TMPDIR="$(mktemp -d -t "screen-split-XXXXXX" 2>/dev/null)"; then
+  :
+else
+  TMPDIR="$(mktemp -d)"
+fi
+
+OUT_LOG="$TMPDIR/stdout.log"
+ERR_LOG="$TMPDIR/stderr.log"
+touch "$OUT_LOG" "$ERR_LOG"
+
+cleanup() {
+  if [[ "${KEEP}" -eq 0 ]]; then
+    rm -rf "$TMPDIR" >/dev/null 2>&1 || true
+  else
+    echo
+    echo "Logs kept at: $TMPDIR"
+    echo "  stdout: $OUT_LOG"
+    echo "  stderr: $ERR_LOG"
+  fi
+}
+trap cleanup EXIT
+
+# ---------- session + layout ----------
+# Base title/session name
+if [[ -z "$TITLE" ]]; then
+  # Derive a short title from the first token of the command
+  TITLE="$1"
+fi
+SESSION="split-${TITLE//[^A-Za-z0-9_.-]/_}-$RANDOM"
+
+# Commands to run in each pane
+TAIL_OUT="tail -n +1 -F $(printf '%q' "$OUT_LOG")"
+TAIL_ERR="tail -n +1 -F $(printf '%q' "$ERR_LOG")"
+
+# Start session with left pane (STDOUT)
+screen -dmS "$SESSION" -t "STDOUT" bash -lc "$TAIL_OUT"
+
+# Try vertical split; if not supported, fall back to horizontal split
+if screen -S "$SESSION" -X split -v 2>/dev/null; then
+  :
+else
+  echo "Warning: Your screen version may not support vertical split (-v). Falling back to horizontal split." >&2
+  screen -S "$SESSION" -X split || true
+fi
+
+# Create right/bottom pane (STDERR)
+screen -S "$SESSION" -X focus right || screen -S "$SESSION" -X focus
+screen -S "$SESSION" -X screen -t "STDERR" bash -lc "$TAIL_ERR"
+
+# Return focus to left pane by default
+screen -S "$SESSION" -X focus left || true
+
+# Optional: a simple caption to see window numbers/titles
+screen -S "$SESSION" -X caption always "%{= bw}%3n %t%{-}"
+
+# ---------- run user command and manage session lifecycle ----------
+(
+  set +e
+  START_TS="$(date '+%Y-%m-%d %H:%M:%S')"
+  {
+    echo "===== Command started at ${START_TS} ====="
+    echo "\$ $*"
+  } >>"$OUT_LOG"
+  {
+    echo "===== Command started at ${START_TS} ====="
+    echo "\$ $*"
+  } >>"$ERR_LOG"
+
+  if [[ -n "$STDBUF" ]]; then
+    $STDBUF "$@" 1>>"$OUT_LOG" 2>>"$ERR_LOG"
+  else
+    "$@" 1>>"$OUT_LOG" 2>>"$ERR_LOG"
+  fi
+  EXIT=$?
+
+  END_TS="$(date '+%Y-%m-%d %H:%M:%S')"
+  {
+    echo "===== Command finished at ${END_TS} (exit ${EXIT}) ====="
+  } >>"$OUT_LOG"
+  {
+    echo "===== Command finished at ${END_TS} (exit ${EXIT}) ====="
+  } >>"$ERR_LOG"
+
+  # If not keeping session open, close a moment after completion so the user can see the status line
+  if [[ "$KEEP" -eq 0 ]]; then
+    sleep 1
+    screen -S "$SESSION" -X quit
+  fi
+
+  exit "$EXIT"
+) &
+
+# ---------- attach ----------
+echo "Attaching to screen session: $SESSION"
+echo "Left: STDOUT, Right: STDERR"
+echo "Logs directory: $TMPDIR"
+# Replace current process with screen so Ctrl-A commands work naturally
+exec screen -r "$SESSION"

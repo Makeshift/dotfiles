@@ -3,6 +3,7 @@
 # Array of paths to add to PATH if they exist
 # Added in reverse order so that the first path in the array is the first path
 path_array=(
+  "$HOME/.local/share/mise/shims"
   "$HOME/.dotnet"
   "/opt/OpenLens"
   "${KREW_ROOT:-$HOME/.krew}/bin"
@@ -24,9 +25,14 @@ path_array=(
 )
 
 # Add paths to PATH if they exist and aren't already in PATH
-for ((i=${#path_array[@]}-1; i>=0; i--)); do
-  if actual=$(realpath "${path_array[$i]}" 2>/dev/null) && [ -d "${actual}" ] && [[ ":$PATH:" != *":$actual:"* ]]; then
-    export PATH="${actual}:$PATH"
-  fi
+#for ((i=${#path_array[@]}-1; i>=0; i--)); do
+#  if actual=$(realpath "${path_array[$i]}" 2>/dev/null) && [ -d "${actual}" ] && [[ ":$PATH:" != *":$actual:"* ]]; then
+#    export PATH="${actual}:$PATH"
+#  fi
+#done
+
+for (( i=${#path_array[@]}-1; i>=0; i-- )); do
+  PATH="${path_array[i]}${PATH:+:$PATH}"
 done
 
+export PATH

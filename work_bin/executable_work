@@ -1,17 +1,17 @@
 #!/bin/bash
 trap "exit" INT
 aws sso login --no-browser --use-device-code --sso-session echobox
-yawsso -d &
+pipx run yawsso -d &
 export CODEARTIFACT_AUTH_TOKEN=$(aws --profile shared-code-artifacts codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)
 echo "export CODEARTIFACT_AUTH_TOKEN=$CODEARTIFACT_AUTH_TOKEN" >$HOME/.aws/codeartifact-token
-npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-ui/:_authToken "$CODEARTIFACT_AUTH_TOKEN" || true
-npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-auth/:_authToken "$CODEARTIFACT_AUTH_TOKEN" || true
-npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-cdk/:_authToken "$CODEARTIFACT_AUTH_TOKEN" || true
-npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-core/:_authToken "$CODEARTIFACT_AUTH_TOKEN" || true
-yarn config set -H npmScopes.echobox.npmAuthToken "$CODEARTIFACT_AUTH_TOKEN" || true
-yarn config set -H npmScopes.ebx-ui.npmAuthToken "$CODEARTIFACT_AUTH_TOKEN" || true
-yarn config set -H npmScopes.ebx-auth.npmAuthToken "$CODEARTIFACT_AUTH_TOKEN" || true
-yarn config set -H npmScopes.ebx-core.npmAuthToken "$CODEARTIFACT_AUTH_TOKEN" || true
+#npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-ui/:_authToken "$CODEARTIFACT_AUTH_TOKEN" || true
+#npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-auth/:_authToken "$CODEARTIFACT_AUTH_TOKEN" || true
+#npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-cdk/:_authToken "$CODEARTIFACT_AUTH_TOKEN" || true
+#npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-core/:_authToken "$CODEARTIFACT_AUTH_TOKEN" || true
+#yarn config set -H npmScopes.echobox.npmAuthToken "$CODEARTIFACT_AUTH_TOKEN" || true
+#yarn config set -H npmScopes.ebx-ui.npmAuthToken "$CODEARTIFACT_AUTH_TOKEN" || true
+#yarn config set -H npmScopes.ebx-auth.npmAuthToken "$CODEARTIFACT_AUTH_TOKEN" || true
+#yarn config set -H npmScopes.ebx-core.npmAuthToken "$CODEARTIFACT_AUTH_TOKEN" || true
 sca_token="$(aws --profile shared-code-artifacts ecr get-login-password --region eu-west-1)"
 echo "$sca_token" | helm registry login --username AWS --password-stdin 060610571733.dkr.ecr.eu-west-1.amazonaws.com || true
 for profile in $(aws configure list-profiles); do

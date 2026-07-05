@@ -6,27 +6,27 @@
 # a .nvmrc file in the directory. Also, revert to default
 # version when entering a directory without .nvmrc
 #
-enter_directory() {
-  if [[ $PWD == "$PREV_PWD" ]]; then
-    return
-  fi
+# enter_directory() {
+#   if [[ $PWD == "$PREV_PWD" ]]; then
+#     return
+#   fi
 
-  if [[ "$PWD" =~ $PREV_PWD && ! -f ".nvmrc" ]]; then
-    return
-  fi
+#   if [[ "$PWD" =~ $PREV_PWD && ! -f ".nvmrc" ]]; then
+#     return
+#   fi
 
-  PREV_PWD=$PWD
-  if [[ -f ".nvmrc" ]]; then
-    nvm use
-    NVM_DIRTY=true
-  elif [[ $NVM_DIRTY = true ]]; then
-    nvm use default
-    NVM_DIRTY=false
-  fi
-}
+#   PREV_PWD=$PWD
+#   if [[ -f ".nvmrc" ]]; then
+#     nvm use 2>&1 > /dev/null
+#     NVM_DIRTY=true
+#   elif [[ $NVM_DIRTY = true ]]; then
+#     nvm use default 2>&1 > /dev/null
+#     NVM_DIRTY=false
+#   fi
+# }
 
-if [[ -n "$PROMPT_COMMAND" ]]; then
-  export PROMPT_COMMAND="$PROMPT_COMMAND; enter_directory"
-else
-  export PROMPT_COMMAND="enter_directory"
-fi
+# if [[ -n "$PROMPT_COMMAND" ]]; then
+#   export PROMPT_COMMAND="$PROMPT_COMMAND; enter_directory"
+# else
+#   export PROMPT_COMMAND="enter_directory"
+# fi

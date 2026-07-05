@@ -1,0 +1,5 @@
+# Proxy for the 'docker run' command which injects AWS creds
+AWS_PROFILE=${AWS_PROFILE:-shared-code-artifacts}
+AWS_REGION=${AWS_REGION:-eu-west-1}
+eval "$(yawsso -e -p "$AWS_PROFILE" | yawsso decrypt)"
+docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN -e AWS_REGION "$@"
