@@ -104,6 +104,7 @@ plugins=(
   golang
   node
   npm
+  fzf-tab # Must stay last: it wraps whatever other plugins bound to Tab.
 )
 
 source $ZSH/oh-my-zsh.sh

@@ -86,18 +86,19 @@ top10net() {
 # Remembering bc exists is hard
 math() { echo 'scale=5;' "$@" | bc -l; }
 
-dcu() {
-  docker compose "$@" up -d
-  docker compose "$@" logs -f --tail 50
-}
-
-dcr() {
-  docker compose "$@" restart
-  docker compose "$@" logs -f --tail 50
-}
-
-# zsh has these from the oh-my-zsh docker-compose and extract plugins.
+# zsh has equivalents from the oh-my-zsh docker-compose and extract plugins.
 if [ -n "$BASH_VERSION" ]; then
+  # `function` form, because zsh expands its own dcu/dcr aliases while parsing this block.
+  function dcu {
+    docker compose "$@" up -d
+    docker compose "$@" logs -f --tail 50
+  }
+
+  function dcr {
+    docker compose "$@" restart
+    docker compose "$@" logs -f --tail 50
+  }
+
   alias docker-compose='docker compose'
   alias forget='history -d $((HISTCMD - 1))' # Forget the last command
 

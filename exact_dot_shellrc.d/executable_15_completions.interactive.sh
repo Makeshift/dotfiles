@@ -1,12 +1,52 @@
-# Prefer Oh My Zsh plugins, but keep a local completion dir for commands that
-# ship reliable native zsh completions.
-COMPLETIONS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/completions"
-mkdir -p "$COMPLETIONS_DIR"
-fpath=("$COMPLETIONS_DIR" "${fpath[@]}")
+# carapace fills in completions; ~/bin script descriptions come from `bin-index`.
+_bin_descriptions="${XDG_CACHE_HOME:-$HOME/.cache}/bin-descriptions"
 
-if runonce -i weekly -n "$0$LINENO"; then
-  command -v chezmoi >/dev/null && chezmoi completion zsh >"$COMPLETIONS_DIR/_chezmoi"
-  command -v eksctl >/dev/null && eksctl completion zsh >"$COMPLETIONS_DIR/_eksctl"
-  command -v rustup >/dev/null && rustup completions zsh rustup >"$COMPLETIONS_DIR/_rustup"
-  command -v rustup >/dev/null && rustup completions zsh cargo >"$COMPLETIONS_DIR/_cargo"
+if [ -n "$ZSH_VERSION" ]; then
+  # Only for commands with no completion yet, so oh-my-zsh's git, docker, kubectl etc. win.
+  _carapace_for_uncompleted() {
+    local init cmd
+    local -a lines body cmds
+    init="$(carapace _carapace zsh 2>/dev/null)" || return
+    lines=("${(@f)init}")
+    # Unquoted, so `compdef *` is a pattern; quoted it would only match literally.
+    body=(${lines:#compdef *})
+    eval "${(F)body}"
+    cmds=(${(Q)${(z)${(M)lines:#compdef *}}})
+    for cmd in ${cmds[3,-1]}; do
+      (( $+_comps[$cmd] )) || compdef _carapace_completer "$cmd"
+    done
+  }
+  (( $+commands[carapace] )) && _carapace_for_uncompleted
+  unset -f _carapace_for_uncompleted
+
+  # fzf-tab renders the menu, so plain group headers and no zsh menu.
+  zstyle ':completion:*:descriptions' format '[%d]'
+  zstyle ':completion:*' menu no
+  zstyle ':fzf-tab:*' switch-group '<' '>'
+
+  # Adds a described "my scripts" group to command-name completion.
+  _bin_scripts_prev="${_comps[-command-]:-_command_names}"
+  _bin_scripts_completer() {
+    local -a scripts
+    [[ -r $_bin_descriptions ]] && scripts=(${(f)"$(<$_bin_descriptions)"})
+    (( $#scripts )) && _describe -t my-scripts 'my scripts' scripts
+    "$_bin_scripts_prev" "$@"
+  }
+  compdef _bin_scripts_completer -command-
+elif [ -n "$BASH_VERSION" ] && command -v carapace >/dev/null; then
+  # shellcheck source=/dev/null
+  source <(carapace _carapace bash 2>/dev/null)
 fi
+
+# Fuzzy-search ~/bin and ~/work_bin by name or description; zsh puts the pick on the next prompt.
+bins() {
+  local pick
+  [ -r "$_bin_descriptions" ] || bin-index
+  pick=$(sed 's/:/\t/' "$_bin_descriptions" | column -t -s "$(printf '\t')" | fzf --prompt='script> ' --query="$*") || return
+  pick=${pick%% *}
+  if [ -n "$ZSH_VERSION" ]; then
+    print -z -- "$pick "
+  else
+    echo "$pick"
+  fi
+}

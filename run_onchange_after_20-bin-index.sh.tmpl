@@ -1,0 +1,4 @@
+#!/bin/sh
+# Rebuilds the script description cache whenever a managed script changes.
+# scripts hash: {{ range (glob (joinPath .chezmoi.sourceDir "bin/*")) }}{{ include . | sha256sum | trunc 12 }}{{ end }}{{ range (glob (joinPath .chezmoi.sourceDir "work_bin/*")) }}{{ include . | sha256sum | trunc 12 }}{{ end }}
+exec "$HOME/bin/bin-index"

@@ -4,6 +4,7 @@ dotfiles.code-workspace
 .ssh/known_hosts
 .ssh/id_*
 test
+docs
 
 {{- if not (get . "enable_explainshell") }}
 .config/services/explainshell

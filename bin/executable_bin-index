@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# desc: Rebuild the cache of script descriptions used by tab completion and the `bins` picker.
+# usage: bin-index [dir...]   (defaults to ~/bin and ~/work_bin)
+set -euo pipefail
+
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/bin-descriptions"
+mkdir -p "$(dirname "$cache")"
+[ "$#" -gt 0 ] || set -- "$HOME/bin" "$HOME/work_bin"
+
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT
+for dir in "$@"; do
+  [ -d "$dir" ] || continue
+  for f in "$dir"/*; do
+    [ -f "$f" ] && [ -x "$f" ] || continue
+    desc=$(head -n 5 "$f" 2>/dev/null | sed -n 's/^#[[:space:]]*desc:[[:space:]]*//p' | head -n 1) || true
+    [ -n "$desc" ] || continue
+    name=${f##*/}
+    printf '%s:%s\n' "${name//:/\\:}" "$desc"
+  done
+done | sort -u >"$tmp"
+mv "$tmp" "$cache"
+trap - EXIT

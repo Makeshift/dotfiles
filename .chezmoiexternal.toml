@@ -8,3 +8,9 @@
     url = "https://github.com/romkatv/powerlevel10k.git"
     refreshPeriod = "168h"
     clone.args = ["--depth", "1"]
+
+[".oh-my-zsh/custom/plugins/fzf-tab"]
+    type = "git-repo"
+    url = "https://github.com/Aloxaf/fzf-tab.git"
+    refreshPeriod = "168h"
+    clone.args = ["--depth", "1"]
