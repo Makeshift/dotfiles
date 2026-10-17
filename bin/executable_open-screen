@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -eq 0 ]; then
+  echo "Creates a screen session with a window for each of the given directories."
+  echo "Usage: $0 <dir1> [dir2 ...]"
+  exit 1
+fi
+
+session_name="workspace"
+
+screen -list | grep -q "[[:space:]]${session_name}[[:space:]]" && {
+  echo "A screen session named '${session_name}' already exists."
+  exit 1
+}
+
+first_dir="$1"
+shift
+
+if [ ! -d "$first_dir" ]; then
+  echo "Directory not found: $first_dir"
+  exit 1
+fi
+
+screen -dmS "$session_name" -t "$first_dir" bash -c "cd \"$first_dir\" && exec bash"
+
+for dir in "$@"; do
+  if [ ! -d "$dir" ]; then
+    echo "Skipping missing directory: $dir"
+    continue
+  fi
+
+  screen -S "$session_name" -X screen -t "$dir" bash -c "cd \"$dir\" && exec bash"
+done
+
+echo "Created screen session: $session_name"
+echo "Attach with:"
+echo "  screen -r $session_name"

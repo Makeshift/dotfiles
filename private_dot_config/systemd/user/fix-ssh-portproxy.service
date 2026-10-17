@@ -1,0 +1,5 @@
+[Unit]
+Description=Refresh Windows portproxy rule for SSH to point at current WSL IP
+
+[Service]
+ExecStart=%h/bin/fix-ssh-portproxy

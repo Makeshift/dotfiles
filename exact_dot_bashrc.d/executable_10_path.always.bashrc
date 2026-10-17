@@ -13,7 +13,6 @@ path_array=(
   "$HOME/bin"
   "$HOME/work_bin"
   "$HOME/.local/bin"
-  "/mnt/c/Program Files/Oracle/VirtualBox"
   "$HOME/go/bin"
   "$HOME/.cargo/bin"
   "/usr/local/go/bin"

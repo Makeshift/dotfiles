@@ -13,7 +13,7 @@ if command -v socat >/dev/null && command -v npiperelay.exe >/dev/null 2>&1; the
         if [[ -S $SSH_AUTH_SOCK ]]; then
             # not expecting the socket to exist as the forwarding command isn't running (http://www.tldp.org/LDP/abs/html/fto.html)
             # echo "removing previous socket..."
-            rm "$SSH_AUTH_SOCK" >/dev/null 2>&1
+            command rm "$SSH_AUTH_SOCK" >/dev/null 2>&1
         fi
         # setsid to force new session to keep running
         # set socat to listen on $SSH_AUTH_SOCK and forward to npiperelay which then forwards to openssh-ssh-agent on windows

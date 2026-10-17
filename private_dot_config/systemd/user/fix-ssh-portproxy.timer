@@ -1,0 +1,9 @@
+[Unit]
+Description=Run fix-ssh-portproxy shortly after WSL boot
+
+[Timer]
+OnBootSec=30s
+Unit=fix-ssh-portproxy.service
+
+[Install]
+WantedBy=timers.target

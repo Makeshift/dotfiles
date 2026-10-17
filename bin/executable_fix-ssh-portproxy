@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail
+
+wsl_ip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+
+if [ -z "$wsl_ip" ]; then
+  echo "fix-ssh-portproxy: could not determine WSL eth0 IP" >&2
+  exit 1
+fi
+
+/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "
+Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile -Command \"netsh interface portproxy delete v4tov4 listenport=22 listenaddress=0.0.0.0; netsh interface portproxy add v4tov4 listenport=22 listenaddress=0.0.0.0 connectport=22 connectaddress=$wsl_ip\"'
+"
