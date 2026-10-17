@@ -11,6 +11,14 @@ chezmoi = "latest"
 carapace = "latest"
 fzf = "latest"
 "github:shoenig/ssh-key-sync" = "latest"
+# Startup aliases ls, cat, du and EDITOR to these, so lazy would only defer the download to the first ls.
+eza = "latest"
+bat = "latest"
+dust = "latest"
+glow = "latest"
+micro = "latest"
+# mise's pipx backend installs through uv.
+uv = "latest"
 
 # On demand.
 jq = { version = "latest", lazy = true }
@@ -18,12 +26,6 @@ ripgrep = { version = "latest", lazy = true }
 dive = { version = "latest", lazy = true }
 tokei = { version = "latest", lazy = true, lazy_bins = ["tokei"] }
 regctl = { version = "latest", lazy = true }
-eza = { version = "latest", lazy = true }
-bat = { version = "latest", lazy = true }
-dust = { version = "latest", lazy = true }
-glow = { version = "latest", lazy = true }
-micro = { version = "latest", lazy = true }
 "github:makeshift/granted" = { version = "latest", lazy = true, lazy_bins = ["granted"] }
 "github:containrrr/shoutrrr" = { version = "latest", lazy = true, lazy_bins = ["shoutrrr"] }
 "pipx:yawsso" = { version = "latest", lazy = true, lazy_bins = ["yawsso"] }
-"cargo:loop-rs" = { version = "latest", lazy = true, lazy_bins = ["loop"] }

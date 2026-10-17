@@ -3,6 +3,9 @@
 # mise config hash: {{ include "private_dot_config/mise/config.toml" | sha256sum }}
 set -eu
 
+mise="$HOME/.local/bin/mise"
+[ -x "$mise" ] || mise=$(command -v mise)
+
 cd "$HOME"
-"$HOME/.local/bin/mise" install --yes
-"$HOME/.local/bin/mise" reshim
+"$mise" install --yes
+"$mise" reshim

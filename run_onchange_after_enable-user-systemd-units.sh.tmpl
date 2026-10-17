@@ -18,12 +18,14 @@ enable+=(fix-ssh-portproxy.timer)
 {{- end }}
 {{- if get . "enable_explainshell" }}
 enable+=(explainshell.service)
-{{- else }}
+{{- else if hasKey . "enable_explainshell" }}
 disable+=(explainshell.service)
 {{- end }}
 
+# --no-block: explainshell waits for Docker, which would otherwise stall chezmoi apply.
 for unit in "${enable[@]}"; do
-  systemctl --user enable --now "$unit"
+  systemctl --user enable "$unit"
+  systemctl --user start --no-block "$unit"
 done
 for unit in "${disable[@]}"; do
   if systemctl --user cat "$unit" >/dev/null 2>&1; then

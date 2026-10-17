@@ -2,7 +2,7 @@
 # desc: Log in to AWS SSO and refresh CodeArtifact, npm, yarn, helm and ECR credentials.
 trap "exit" INT
 aws sso login --no-browser --use-device-code --sso-session echobox
-pipx run yawsso -d &
+yawsso -d &
 export CODEARTIFACT_AUTH_TOKEN=$(aws --profile shared-code-artifacts codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)
 echo "export CODEARTIFACT_AUTH_TOKEN=$CODEARTIFACT_AUTH_TOKEN" >$HOME/.aws/codeartifact-token
 npm config --global set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-ui/:_authToken "$CODEARTIFACT_AUTH_TOKEN" || true
