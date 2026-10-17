@@ -5,7 +5,7 @@
 #  --mount=type=secret,id=AWS_SECRET_ACCESS_KEY,env=AWS_SECRET_ACCESS_KEY \
 #  --mount=type=secret,id=AWS_SESSION_TOKEN,env=AWS_SESSION_TOKEN
 AWS_PROFILE=${AWS_PROFILE:-shared-code-artifacts}
-eval "$(yawsso -e -p "$AWS_PROFILE" | yawsso decrypt)"
+eval "$(uvx yawsso -e -p "$AWS_PROFILE" | uvx yawsso decrypt)"
 docker build \
   --secret id=AWS_ACCESS_KEY_ID,env=AWS_ACCESS_KEY_ID \
   --secret id=AWS_SECRET_ACCESS_KEY,env=AWS_SECRET_ACCESS_KEY \

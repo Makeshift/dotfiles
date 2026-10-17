@@ -1,0 +1,36 @@
+# System packages the scripts and shell config use; run_onchange_after_05-apt-packages.sh.tmpl
+# installs any that are missing on Debian/Ubuntu.
+[apt]
+  packages = [
+    "apt-file",
+    "bc",
+    "bsdextrautils",
+    "file",
+    "htop",
+    "lsof",
+    "ncdu",
+    "net-tools",
+    "netcat-openbsd",
+    "parallel",
+    "rsync",
+    "screen",
+    "socat",
+    "xz-utils",
+  ]
+
+# Python CLIs, installed with `uv tool install` by run_onchange_after_15-uv-tools.sh.tmpl.
+# Scripts call them through `uvx`, so they also work where these aren't installed.
+[uv]
+  # Becomes the default python/python3 in ~/.local/bin. Without a version, uv keeps whatever it already has.
+  python = "3.14"
+  tools = [
+    "ansible-lint",
+    "awscli-local",
+    "basic-memory",
+    "bump-my-version",
+    "congee",
+    "detect-secrets",
+    "glances",
+    "yawsso",
+    "yt-dlp",
+  ]

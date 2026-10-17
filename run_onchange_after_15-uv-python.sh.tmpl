@@ -1,0 +1,18 @@
+#!/bin/sh
+# Installs uv's Python as the default python/python3 and the declared Python CLIs as uv tools.
+# python: {{ .uv.python }} tools: {{ .uv.tools | join " " }}
+set -eu
+
+uv="$HOME/.local/share/mise/shims/uv"
+[ -x "$uv" ] || uv=$(command -v uv)
+
+"$uv" python install --default {{ .uv.python | quote }}
+
+failed=""
+{{ range .uv.tools -}}
+"$uv" tool install {{ . | quote }} || failed="$failed {{ . }}"
+{{ end -}}
+if [ -n "$failed" ]; then
+  echo "uv tool install failed for:$failed (an existing executable needs \`uv tool install --force\`)" >&2
+  exit 1
+fi

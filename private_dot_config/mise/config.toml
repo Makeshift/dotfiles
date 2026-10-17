@@ -1,12 +1,10 @@
 # Tools for the dotfiles. Lazy tools install the first time one of their commands runs;
 # the rest install on `chezmoi apply` (run_onchange_after_10-mise-install.sh.tmpl).
 
-[env]
-_.python.venv = { path = "{{env.HOME}}/.cache/mise-venv/", create = true }
+# Python and Python CLIs come from uv instead (.chezmoidata.toml).
 
 [tools]
 # Needed by shell startup, chezmoi scripts or systemd units.
-python = "latest"
 chezmoi = "latest"
 carapace = "latest"
 fzf = "latest"
@@ -17,7 +15,6 @@ bat = "latest"
 dust = "latest"
 glow = "latest"
 micro = "latest"
-# mise's pipx backend installs through uv.
 uv = "latest"
 
 # On demand.
@@ -28,4 +25,3 @@ tokei = { version = "latest", lazy = true, lazy_bins = ["tokei"] }
 regctl = { version = "latest", lazy = true }
 "github:makeshift/granted" = { version = "latest", lazy = true, lazy_bins = ["granted"] }
 "github:containrrr/shoutrrr" = { version = "latest", lazy = true, lazy_bins = ["shoutrrr"] }
-"pipx:yawsso" = { version = "latest", lazy = true, lazy_bins = ["yawsso"] }
