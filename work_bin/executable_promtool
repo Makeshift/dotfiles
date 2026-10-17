@@ -1,2 +1,0 @@
-#!/bin/bash
-promtool --url=https://prometheus.so8.cluster.ebx.sh/

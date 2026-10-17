@@ -1,1 +1,0 @@
-pkgconf --variable=completionsdir bash-completion

@@ -91,6 +91,7 @@ plugins=(
   history-substring-search
   # common-aliases
   docker-compose
+  mise
   compleat
   dirpersist
   git
