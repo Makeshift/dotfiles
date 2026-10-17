@@ -4,7 +4,7 @@ alias chmod='chmod --preserve-root'            # Don't let me mess up root
 alias chgrp='chgrp --preserve-root'            # Don't let me mess up root
 alias tf=terraform                             # Terraform
 alias tg=terragrunt                            # Terragrunt
-alias rm='rm --preserve-root'                  # Overwritten in .zshrc.d if interactive
+alias rm='rm --preserve-root'                  # Don't let me delete root
 alias python='python3'                         # I literally never want python2 by accident
 alias t='tail -f 2>&1 /dev/null'               # Just keeps a session going
 alias ll='ls -lah'                             # ls list with hidden files, human readable sizes
@@ -13,7 +13,6 @@ alias cd..='cd ..'                             # Typo fixes
 alias path='echo -e ${PATH//:/\\n}'            # Pretty-print all entries in $PATH
 alias reset="reset;clear"                      # Clean up the screen
 alias lsdir="ls -d */"                         # Show only dirs
-alias vpn=xaval                                # Poor man's SSH-based VPN (https://github.com/ivanilves/xiringuito)
 alias mkdir='mkdir -pv'                        # Makes parent directories as well
 alias df='df -H'                               # Makes df human readable by default
 # alias rm='rm -I --preserve-root'               # Prompt if removing more than 3 files or if recursive, also don't let me delete root
@@ -91,9 +90,10 @@ math() { echo 'scale=5;' "$@" | bc -l; }
 load_alf_aliases() {
   local generated_aliases
   local generated_function
-  [[ -d "$HOME/.bashrc.d" ]] || return
+  [[ -f "$HOME/.shellrc.d/alf.conf" ]] || return
   command -v alf >/dev/null || return
-  generated_aliases="$(cd "$HOME/.bashrc.d" && alf generate 2>/dev/null)" || return
+  # alf only reads alf.conf from the working directory.
+  generated_aliases="$(builtin cd "$HOME/.shellrc.d" && alf generate 2>/dev/null)" || return
 
   while IFS= read -r generated_function; do
     unalias "$generated_function" 2>/dev/null
@@ -103,8 +103,45 @@ load_alf_aliases() {
       -e 's/^[[:space:]]*([A-Za-z_][A-Za-z0-9_:-]*)[[:space:]]*\(\)[[:space:]]*\{.*/\1/p'
   )
 
-  emulate -L zsh -o no_aliases
+  [ -n "$ZSH_VERSION" ] && emulate -L zsh -o no_aliases
   eval "$generated_aliases"
 }
+
+dcu() {
+  docker compose "$@" up -d
+  docker compose "$@" logs -f --tail 50
+}
+
+dcr() {
+  docker compose "$@" restart
+  docker compose "$@" logs -f --tail 50
+}
+
+# zsh has these from the oh-my-zsh docker-compose and extract plugins.
+if [ -n "$BASH_VERSION" ]; then
+  alias docker-compose='docker compose'
+  alias forget='history -d $((HISTCMD - 1))' # Forget the last command
+
+  extract() {
+    if [ -f "$1" ]; then
+      case $1 in
+      *.tar.xz) tar -xvf "$1" ;;
+      *.tar.bz2) tar -jxvf "$1" ;;
+      *.tar.gz) tar -zxvf "$1" ;;
+      *.bz2) bunzip2 "$1" ;;
+      *.gz) gunzip "$1" ;;
+      *.tar) tar -xvf "$1" ;;
+      *.tbz2) tar -jxvf "$1" ;;
+      *.tgz) tar -zxvf "$1" ;;
+      *.zip) unzip "$1" ;;
+      *.rar | *.7z) 7z x "$1" ;;
+      *.z) uncompress "$1" ;;
+      *) echo "'$1' cannot be extracted via extract()" ;;
+      esac
+    else
+      echo "'$1' is not a valid file!"
+    fi
+  }
+fi
 load_alf_aliases
 unset -f load_alf_aliases

@@ -1,9 +1,7 @@
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-autoload -U add-zsh-hook
-
-load-nvmrc() {
+load_nvmrc() {
   local nvmrc_path
   nvmrc_path="$(nvm_find_nvmrc)"
 
@@ -22,9 +20,10 @@ load-nvmrc() {
   fi
 }
 
-if (( $+functions[nvm_find_nvmrc] )); then
-  add-zsh-hook chpwd load-nvmrc
-  load-nvmrc
+if [ -n "$ZSH_VERSION" ] && command -v nvm_find_nvmrc >/dev/null; then
+  autoload -U add-zsh-hook
+  add-zsh-hook chpwd load_nvmrc
+  load_nvmrc
 fi
 
 export PNPM_HOME="$HOME/.local/share/pnpm"

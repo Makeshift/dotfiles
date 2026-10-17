@@ -9,16 +9,22 @@ if command -v bat >/dev/null; then
 
   if command -v glow >/dev/null; then
     cat() {
-      if (( $# )) && [[ "${(M)@:#*.md}" ]]; then
-        glow "$@"
-      else
-        bat "$@"
-      fi
+      local arg
+      for arg in "$@"; do
+        case "$arg" in
+          *.md) glow "$@"; return ;;
+        esac
+      done
+      bat "$@"
     }
   else
     alias cat='bat'
   fi
 fi
+
+alias rgrep='grep -r --color=auto'
+alias egrep='grep -E --color=auto'
+alias fgrep='grep -F --color=auto'
 
 if command -v dust >/dev/null; then
   alias du='dust'
@@ -43,7 +49,7 @@ cd() {
   fi
 
   # If we try to cd to a file, cd to the directory it's in instead.
-  [[ -f "$target" ]] && target=${target:h}
+  [[ -f "$target" ]] && target=$(dirname -- "$target")
 
   builtin cd "$target" && ls
 }
@@ -52,7 +58,7 @@ cd() {
 cdf() {
   local target="$1"
   if [[ -f "$target" ]]; then
-    target=${target:h}
+    target=$(dirname -- "$target")
   fi
   builtin cd "$target" && ls
 }
