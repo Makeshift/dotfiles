@@ -1,1 +1,7 @@
-export COPILOT_CUSTOM_INSTRUCTIONS_DIRS="/mnt/c/Users/{{ .windows_username }}/AppData/Roaming/Code/User/prompts"
+# Copilot CLI reads a comma-separated list of extra instruction directories.
+_copilot_dirs=""
+for _copilot_dir in {{ if .is_wsl }}"/mnt/c/Users/{{ .windows_username }}/AppData/Roaming/Code/User/prompts" {{ end }}"$HOME/.copilot/custom-instructions.d"; do
+  [ -d "$_copilot_dir" ] && _copilot_dirs="${_copilot_dirs:+$_copilot_dirs,}$_copilot_dir"
+done
+[ -n "$_copilot_dirs" ] && export COPILOT_CUSTOM_INSTRUCTIONS_DIRS="$_copilot_dirs"
+unset _copilot_dirs _copilot_dir

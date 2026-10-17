@@ -30,7 +30,7 @@ export PNPM_HOME="$HOME/.local/share/pnpm"
 [[ ":$PATH:" != *":$PNPM_HOME:"* ]] && export PATH="$PNPM_HOME:$PATH"
 
 # Patch VS Code server's node binary to raise the memory limit
-if [[ -d "$HOME/.vscode-server/bin" ]] && runonce -i daily -n "$0$LINENO"; then
+if [[ -d "$HOME/.vscode-server/bin" ]] && runonce -i daily -n vscode-node-patch; then
   while IFS= read -r -d '' node; do
     if ! file "$node" | grep -q 'ASCII text'; then
       dir="$(dirname "$node")"

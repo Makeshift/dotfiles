@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# carapace has no built-in eksctl completer; eksctl is a cobra CLI, so bridge to its own completion.
+name: eksctl
+description: The official CLI for Amazon EKS
+parsing: disabled
+completion:
+  positionalany: ["$carapace.bridge.Cobra([eksctl])"]

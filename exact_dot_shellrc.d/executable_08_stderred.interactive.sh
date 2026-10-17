@@ -36,11 +36,10 @@ find_and_export_stderred() {
       break
     fi
   done
-  if [[ "$found" == 0 ]]; then
+  # zsh stays quiet: output during startup breaks powerlevel10k's instant prompt.
+  if [[ "$found" == 0 && -n "$BASH_VERSION" ]]; then
     echo "Stderred not installed, run install_stderred to install it" >&2
   fi
 }
 
 find_and_export_stderred
-
-unset search_for

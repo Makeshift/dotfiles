@@ -1,14 +1,15 @@
 [Unit]
-Description=Explainshell docker compose stack
-PartOf=docker.service
-After=docker.service
+Description=Explainshell docker compose stack (serves http://localhost:5000)
 
 [Service]
 Type=oneshot
 RemainAfterExit=true
 WorkingDirectory=%h/.config/services/explainshell
-ExecStart=docker compose up -d
-ExecStop=docker compose down
+# Docker Desktop's WSL integration adds the docker CLI some time after boot.
+ExecStartPre=/bin/sh -c 'until command -v docker >/dev/null && docker info >/dev/null 2>&1; do sleep 5; done'
+TimeoutStartSec=15min
+ExecStart=/bin/sh -c 'exec docker compose up -d'
+ExecStop=/bin/sh -c 'exec docker compose down'
 
 [Install]
 WantedBy=default.target
