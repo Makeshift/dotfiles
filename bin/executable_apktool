@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# desc: Decode and rebuild Android APKs with Apktool, using the jar mise installs.
+# source: https://github.com/iBotPeaches/Apktool
+set -euo pipefail
+
+dir=$(mise where github:iBotPeaches/Apktool)
+exec java -jar "$dir/apktool.jar" "$@"

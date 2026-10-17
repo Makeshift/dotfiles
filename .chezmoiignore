@@ -15,4 +15,5 @@ docs
 .config/systemd/user/fix-ssh-portproxy.*
 bin/fix-ssh-portproxy
 bin/wsl_drop_cache
+bin/warp-pulumi-up
 {{- end }}

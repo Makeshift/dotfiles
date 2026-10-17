@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# desc: Print seconds since Connor last messaged the calling Claude session, or nothing when unknown.
+# usage: session-idle-seconds [session-id]   (defaults to $CLAUDE_CODE_SESSION_ID)
+set -euo pipefail
+
+session_id=${1:-${CLAUDE_CODE_SESSION_ID:-}}
+[[ -n $session_id ]] || exit 0
+transcript=$(compgen -G "$HOME/.claude/projects/*/${session_id}.jsonl" | head -1) || exit 0
+[[ -n $transcript ]] || exit 0
+# A message sent mid-turn is recorded as a queued_command attachment, not a user entry.
+last=$(jq -r 'select((.type == "user" and .origin.kind == "human")
+    or (.type == "attachment" and .attachment.type == "queued_command" and .attachment.origin.kind == "human"))
+  | .timestamp' "$transcript" 2>/dev/null | sort | tail -1)
+[[ -n $last ]] || exit 0
+echo $(( $(date +%s) - $(date -d "$last" +%s) ))

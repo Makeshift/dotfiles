@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# desc: Run the telegram-api-mcp server as the Telegram channel plugin's bot, reusing its stored token.
+set -euo pipefail
+set -a
+# shellcheck source=/dev/null
+. "${TELEGRAM_STATE_DIR:-$HOME/.claude/channels/telegram}/.env"
+set +a
+exec node "$HOME/projects/telegram-api-mcp/dist/index.js"

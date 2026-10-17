@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# desc: Send the arguments (or stdin) as a Telegram message to the chat configured in the env file.
+# usage: telegram-notify [--urgent] [--idle-minutes N] [--html] [--button 'Label|https://url']... [text]
+#   --urgent          send even if Connor is active
+#   --idle-minutes N  how long Connor must be inactive before a non-urgent message is sent (default 5)
+#   --html            parse the text as Telegram HTML (<b>, <i>, <code>, <pre>, <a href>); escape & < > yourself
+#   --button L|URL    add a URL button under the message; repeat for more, one per row
+# Without --urgent, the message is skipped while Connor is active in the calling Claude session,
+# meaning he sent it a message within the idle window. Activity at the PC or in other sessions
+# doesn't count: he can miss this session's output while busy elsewhere. Prints "sent" or
+# "skipped: ..." on stdout; exits non-zero only when a send fails.
+set -euo pipefail
+
+urgent=0
+idle_minutes=5
+parse_mode=
+buttons=()
+while (($#)); do
+  case $1 in
+    --urgent) urgent=1; shift ;;
+    --idle-minutes) idle_minutes=${2:?--idle-minutes needs a value}; shift 2 ;;
+    --html) parse_mode=HTML; shift ;;
+    --button) buttons+=("${2:?--button needs Label|URL}"); shift 2 ;;
+    --) shift; break ;;
+    -*) echo "telegram-notify: unknown option $1" >&2; exit 2 ;;
+    *) break ;;
+  esac
+done
+
+env_file="${TELEGRAM_NOTIFY_ENV:-}"
+if [[ -z $env_file ]]; then
+  for candidate in "${HOME:-/nonexistent}/.config/telegram-notify/env" /etc/telegram-notify.env; do
+    if [[ -r $candidate ]]; then
+      env_file=$candidate
+      break
+    fi
+  done
+fi
+[[ -n $env_file ]] || { echo "telegram-notify: no readable env file" >&2; exit 1; }
+# shellcheck source=/dev/null
+. "$env_file"
+
+if (($#)); then text="$*"; else text=$(cat); fi
+
+if ((!urgent)); then
+  window=$((idle_minutes * 60))
+  chat=$("${BASH_SOURCE[0]%/*}/session-idle-seconds")
+  if [[ -n $chat && $chat -lt $window ]]; then
+    echo "skipped: Connor messaged this session ${chat}s ago"
+    exit 0
+  fi
+fi
+
+args=(-d chat_id="$TELEGRAM_CHAT_ID" --data-urlencode text="$text")
+[[ -n $parse_mode ]] && args+=(-d parse_mode="$parse_mode")
+if ((${#buttons[@]})); then
+  markup=$(printf '%s\n' "${buttons[@]}" | jq -R -s -c '
+    split("\n") | map(select(length > 0) | split("|") | [{text: .[0], url: (.[1:] | join("|"))}])
+    | {inline_keyboard: .}')
+  args+=(--data-urlencode reply_markup="$markup")
+fi
+
+response=$(curl -sS --retry 6 --retry-all-errors --retry-delay 10 \
+  "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" "${args[@]}")
+[[ $response == *'"ok":true'* ]] || { echo "telegram-notify: $response" >&2; exit 1; }
+echo sent

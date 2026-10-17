@@ -1,0 +1,12 @@
+#!/bin/bash
+# desc: Quick AWS SSO login and CodeArtifact token refresh for npm and yarn, without work's profile and ECR steps.
+echo "Fast mode enabled, skipping regenerating profiles"
+aws sso login --no-browser --sso-session echobox
+uvx yawsso -d &
+export CODEARTIFACT_AUTH_TOKEN=$(aws --profile shared-code-artifacts codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)
+export CODEARTIFACT_TOKEN="$CODEARTIFACT_AUTH_TOKEN"
+npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-cdk/:_authToken "$CODEARTIFACT_AUTH_TOKEN"
+npm config set //echobox-060610571733.d.codeartifact.eu-west-1.amazonaws.com/npm/ebx-core/:_authToken "$CODEARTIFACT_AUTH_TOKEN"
+yarn config set -H npmScopes.echobox.npmAuthToken "$(aws codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)"
+yarn config set -H npmScopes.ebx-core.npmAuthToken "$(aws codeartifact get-authorization-token --domain echobox --domain-owner 060610571733 --query authorizationToken --output text)"
+wait

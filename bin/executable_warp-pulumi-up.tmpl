@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# desc: Write a Warp launch configuration with one `pulumi up` tab per child directory.
+# usage: warp-pulumi-up [stack]   (with a stack, only directories that have Pulumi.<stack>.yaml)
+set -euo pipefail
+
+output_dir='/mnt/c/Users/{{ .windows_username }}/AppData/Roaming/warp/Warp/data/launch_configurations'
+base_dir="$(pwd)"
+stack_name="${1:-}"
+name="Pulumi Up - $(basename "$base_dir")"
+output_file="${output_dir}/pulumi-up-tabs-${name// /-}.yaml"
+
+mkdir -p "$output_dir"
+
+# Gather immediate child directories
+dirs=()
+for d in "$base_dir"/*; do
+  if [ -d "$d" ] && [ "$(basename "$d")" != "node_modules" ]; then
+    if [ -n "$stack_name" ]; then
+      if [ ! -f "$d/Pulumi.${stack_name}.yaml" ] && [ ! -f "$d/Pulumi.${stack_name}.yml" ]; then
+        continue
+      fi
+    fi
+    dirs+=("$d")
+  fi
+done
+
+if [ "${#dirs[@]}" -eq 0 ]; then
+  echo "No subdirectories found in: $base_dir" >&2
+  exit 1
+fi
+
+# Start YAML (one tab per directory)
+{
+  echo '---'
+  echo "name: ${name}"
+  echo 'windows:'
+  echo '  - tabs:'
+} >"$output_file"
+
+# Add one tab per directory
+for d in "${dirs[@]}"; do
+  dir_name="$(basename "$d")"
+  pulumi_up_cmd='pulumi up'
+  if [ -n "$stack_name" ]; then
+    pulumi_up_cmd="${pulumi_up_cmd} -s ${stack_name}"
+  fi
+  {
+    echo "      - title: \"pulumi up - ${dir_name}\""
+    echo '        layout:'
+    echo "          cwd: $d"
+    echo '          commands:'
+    echo "            - exec: cd '$d'"
+    echo "            - exec: ${pulumi_up_cmd}"
+  } >>"$output_file"
+done
+
+echo "Wrote: $output_file"

@@ -25,3 +25,7 @@ tokei = { version = "latest", lazy = true, lazy_bins = ["tokei"] }
 regctl = { version = "latest", lazy = true }
 "github:makeshift/granted" = { version = "latest", lazy = true, lazy_bins = ["granted"] }
 "github:containrrr/shoutrrr" = { version = "latest", lazy = true, lazy_bins = ["shoutrrr"] }
+act = { version = "latest", lazy = true, lazy_bins = ["act"] }
+"github:asdine/cueimports" = { version = "latest", lazy = true, lazy_bins = ["cueimports"] }
+# A jar, not a binary: bin/apktool runs it with java.
+"github:iBotPeaches/Apktool" = { version = "latest", rename_exe = "apktool.jar" }
