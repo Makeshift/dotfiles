@@ -1,5 +1,5 @@
 #!/bin/bash
-# Calculates the average time it takes to run a command by running it 100 times
+# desc: Run a command 100 times and print its average real, user and sys time.
 tmpfile=$(mktemp)
 # I would have used BASH's inbuilt rather than the time command, since it's slightly more precise, but it's really finnicky.
 # Also, setting TIMEFORMAT appears to make it round down to 0 a lot, losing precision

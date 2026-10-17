@@ -1,3 +1,4 @@
 #!/bin/bash
+# desc: Flush dirty pages and drop the kernel page cache so WSL can release memory.
 
 sudo sh -c "sync;echo 3 > /proc/sys/vm/drop_caches"

@@ -1,4 +1,5 @@
 #!/bin/sh
+# desc: Minimal xclip stand-in using the Windows clipboard; -in copies stdin, else pastes.
 
 if [ "$1" = "-in" ]; then
   powershell.exe '$Input | Set-Clipboard'

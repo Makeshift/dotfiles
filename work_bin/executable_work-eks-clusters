@@ -1,4 +1,5 @@
 #!/bin/bash
+# desc: Add every eu-west-1 EKS cluster from every AWS profile to kubeconfig.
 if command -v jq >/dev/null 2>&1; then
   for profile in $(aws configure list-profiles); do
     echo "Checking $profile..."

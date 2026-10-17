@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+# desc: Print the raw byte sequence of the next key pressed.
 echo "Type any key to get its raw sequence: "
 {
   stty  raw min 1 time 20 -echo

@@ -1,4 +1,5 @@
 #!/bin/bash
+# desc: Log in to AWS SSO and refresh CodeArtifact, npm, yarn, helm and ECR credentials.
 trap "exit" INT
 aws sso login --no-browser --use-device-code --sso-session echobox
 pipx run yawsso -d &

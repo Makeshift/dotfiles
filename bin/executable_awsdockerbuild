@@ -1,5 +1,5 @@
 #!/bin/bash
-# Proxy for the 'docker build' command which injects AWS creds
+# desc: Run docker build with AWS SSO credentials passed as BuildKit secrets.
 # Template for RUN:
 # RUN --mount=type=secret,id=AWS_ACCESS_KEY_ID,env=AWS_ACCESS_KEY_ID \
 #  --mount=type=secret,id=AWS_SECRET_ACCESS_KEY,env=AWS_SECRET_ACCESS_KEY \

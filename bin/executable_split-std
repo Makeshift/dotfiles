@@ -1,21 +1,6 @@
 #!/usr/bin/env bash
-# Create a GNU Screen session split vertically with live stdout on the left and stderr on the right
-# for an arbitrary command.
-#
-# Usage:
-#   screen-split-stdout-stderr.sh [--keep] [--title NAME] -- your_command arg1 arg2 ...
-#
-# Options:
-#   --keep, -k      Keep the screen session running after the command finishes (and keep logs).
-#   --title, -t     A custom base title for the screen session (default derived from the command).
-#
-# Notes:
-# - Requires: GNU screen, tail
-# - Recommended (for timely output): stdbuf (GNU coreutils). Without it, some programs buffer when
-#   writing to files, so updates may appear in chunks.
-# - The script tails two log files (stdout.log, stderr.log) so you can scroll back and review output.
-# - On completion, the script writes the exit code to both panes. If --keep is not set, the screen
-#   session will automatically close a moment after completion.
+# desc: Run a command in screen with live stdout and stderr in side-by-side panes.
+# usage: split-std [--keep] [--title NAME] -- command [args ...]
 
 set -Eeuo pipefail
 

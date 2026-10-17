@@ -1,7 +1,9 @@
 #!/bin/bash
-output="${1-~/.ssh/id_rsa}"
+# desc: Generate a passphrase-less ed25519 SSH key and print its public key.
+# usage: new_ssh_key [path, default ~/.ssh/id_ed25519]
+output="${1:-$HOME/.ssh/id_ed25519}"
 ssh-keygen -q -t ed25519 -f "$output" -N '' -C "${USER}@$(cat /proc/sys/kernel/hostname)"
 echo "------------------"
-\cat ~/.ssh/id_rsa.pub
+\cat "${output}.pub"
 echo "------------------"
 echo "https://github.com/settings/ssh/new"

@@ -1,6 +1,5 @@
 #!/bin/bash
-# Written by Makeshift 03.08.20
-# https://github.com/Makeshift
+# desc: Serve the current directory over HTTP using python3, python2, node or nc.
 if [ -n "$1" ] && [[ ! $1 =~ ^[0-9]+$ ]]; then
     echo -e "
 Usage: ${0} [port]

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+# desc: Define and export ANSI colour escape variables for other scripts.
+# Source this file; it only sets variables.
 
-# Export all variables
 set -a
 # Reset
 R="\033[0m" # Text Reset

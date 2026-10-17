@@ -1,2 +1,3 @@
 #!/bin/bash
+# desc: List open TCP and UDP sockets whose address contains the given port.
 lsof -Pan -i tcp -i udp | grep ":${1}"

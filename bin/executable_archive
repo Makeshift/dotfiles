@@ -1,4 +1,6 @@
 #!/bin/bash
+# desc: Create a .tar.xz archive of the given files or folders.
+# usage: archive <file or folder ...> [name.tar.xz]
 
 read -r -d '' HELP <<EOF
 Creates an .tar.xz archive of a file or folder
@@ -25,7 +27,7 @@ function archive() {
       name="$(basename "$1").tar.xz"
     else
       # If there's more than one argument and no name is provided, use the basename of the pwd as the name of the file
-      name="$(basename "$(PWD)").tar.xz"
+      name="$(basename "$PWD").tar.xz"
     fi
     # Create the archive
     tar -cJf "$name" "${filelist[@]}"

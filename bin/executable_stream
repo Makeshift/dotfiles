@@ -1,6 +1,5 @@
 #!/bin/bash
-# Written by Makeshift 03.08.20
-# https://github.com/Makeshift
+# desc: Stream the current terminal session to anyone who connects with nc.
 if [ -n "$1" ] && [[ ! $1 =~ ^[0-9]+$ ]]; then
     echo -e "
 Usage: ${0} [port]
@@ -13,8 +12,8 @@ Use Ctrl+D (or type exit) to kill the stream.
 fi
 source colors
 # Output some useful IPs
-echo -e "${YELLOW}Local:${C}\n$(ifconfig -a | /bin/grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }')"
-echo -e "${YELLOW}Public:${C}\n    $(curl -s checkip.amazonaws.com)"
+echo -e "${Yellow}Local:${R}\n$(ifconfig -a | /bin/grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }')"
+echo -e "${Yellow}Public:${R}\n    $(curl -s checkip.amazonaws.com)"
 port=${1:-8000}
 
 # If 8000 is in use, keep going up until we find one that's free
@@ -25,9 +24,9 @@ fi
 until ! lsof -Pi :"${port}" -sTCP:LISTEN -t > /dev/null; do
     port=$((port+1))
 done
-echo -e "${YELLOW}Starting stream on port $port.${C}"
-echo -e "${YELLOW}Use '${RED}nc <your ip> $port${YELLOW}' to connect.${C}"
-echo -e "${YELLOW}Use '${RED}Ctrl-D${YELLOW}' (or type exit) to kill the stream.${C}"
+echo -e "${Yellow}Starting stream on port $port.${R}"
+echo -e "${Yellow}Use '${Red}nc <your ip> $port${Yellow}' to connect.${R}"
+echo -e "${Yellow}Use '${Red}Ctrl-D${Yellow}' (or type exit) to kill the stream.${R}"
 file=$(mktemp) # Just for a filename
 rm $file
 # Named this so my shell can set up a [*] so I remember it's being recorded
@@ -40,4 +39,4 @@ kill "$NC_PID" > /dev/null
 # Hides the nasty looking BG kill ;)
 wait "$NC_PID" 2> /dev/null
 rm "$file" > /dev/null
-echo -e "${YELLOW} Stream ended.${C}"
+echo -e "${Yellow} Stream ended.${R}"

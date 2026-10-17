@@ -1,4 +1,6 @@
 #!/bin/bash
+# desc: Run a command, or pass a named check, at most once per interval.
+# source: https://github.com/techbelly/dotfiles/blob/master/bin/runonce
 
 help_and_exit() {
     cat << EOF

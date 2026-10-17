@@ -1,3 +1,5 @@
 #!/bin/bash
+# desc: Copy files with rsync, skipping dotfiles and keeping newer files at the destination.
+# usage: cpnodots <source> <destination>
 
-rsync -uan --progress --exclude=".*" $1 $2
+rsync -ua --progress --exclude=".*" "$1" "$2"

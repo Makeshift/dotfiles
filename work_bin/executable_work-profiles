@@ -1,4 +1,5 @@
 #!/bin/bash
+# desc: Regenerate AWS config profiles from Echobox SSO with granted, preferring admin roles.
 # Requires a modified version of granted from makeshift/granted
 granted sso populate --verbose \
   --default-region eu-west-1 --sso-session-name echobox \

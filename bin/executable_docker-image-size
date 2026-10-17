@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# desc: Break down a Docker image's size by layer, optionally compared with another image.
 set -euo pipefail
 
 usage() {

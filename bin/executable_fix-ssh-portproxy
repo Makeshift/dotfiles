@@ -1,4 +1,5 @@
 #!/bin/bash
+# desc: Point the Windows port 22 portproxy at the current WSL IP address.
 set -euo pipefail
 
 wsl_ip=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')

@@ -1,4 +1,5 @@
 #!/bin/bash
+# desc: Generate a passphrase-less GPG key and print its chezmoi signing-key data line.
 keyid=$(gpg --batch --passphrase '' --quick-generate-key "${USER} <${USER}@$(cat /proc/sys/kernel/hostname).$(date +%s)>" future-default cert never 2>&1 | grep "marked as ultimately trusted" | cut -d' ' -f 3)
 gpg --list-secret-keys --keyid-format LONG "$keyid"
 echo "------------------------"

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Author: Linyos Torovoltos github.com/linyostorovovoltos
+# desc: Render text as a QR code in the terminal or to a PNG file.
+# source: https://github.com/alexanderepstein/Bash-Snippets/blob/master/qrify/qrify
 
 currentVersion="1.23.0"
 multiline="0" # flag that indicates multiline option
@@ -105,8 +106,8 @@ update()
 
 makeqr()
 {
-  input=$(echo $input | sed s/" "/%20/g ) ## replace all spaces in the sentence with HTML-encoded space %20
-  httpGet qrenco.de/$input ## get a response for the qrcode
+  input=$(echo "$input" | sed s/" "/%20/g ) ## replace all spaces in the sentence with HTML-encoded space %20
+  httpGet qrenco.de/"$input" ## get a response for the qrcode
 }
 
 # redirects the image obtained from the goqr api into a png file

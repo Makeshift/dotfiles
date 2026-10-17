@@ -1,2 +1,3 @@
 #!/bin/bash
+# desc: Rerun a command until it exits successfully.
 until $*; do :; done
