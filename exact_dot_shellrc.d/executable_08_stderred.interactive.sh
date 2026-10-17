@@ -1,7 +1,7 @@
 # Makes stderr red.
 # TODO: Fork stderred and use CI to build a binary for each platform
 
-search_for=("/usr/local/lib/libstderred.so" "$HOME/.lib/libstderred.so" "/usr/lib/libstderred.so" "/lib/libstderred.so")
+search_for=("/usr/local/lib/libstderred.so" "$HOME/bin/libstderred.so" "/usr/lib/libstderred.so" "/lib/libstderred.so")
 
 install_stderred() {
   local tmpdir file_placed f
@@ -13,7 +13,7 @@ install_stderred() {
   make
   file_placed=0
   for f in "${search_for[@]}"; do
-    if [[ -d "$(dirname "$f")" ]] && [[ -w "$(dirname "$f")" ]] && cp build/libstderred.so "$f"; then
+    if [[ -d "$(dirname "$f")" ]] && [[ -w "$(dirname "$f")" ]] && install -m 644 build/libstderred.so "$f"; then
       file_placed=1
       break
     fi

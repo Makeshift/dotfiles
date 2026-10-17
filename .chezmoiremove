@@ -2,6 +2,7 @@
 .bashrc.d
 .zshrc.d
 .eget.toml
+.lib
 .liquidpromptrc
 liquidprompt
 .config/resh.toml
