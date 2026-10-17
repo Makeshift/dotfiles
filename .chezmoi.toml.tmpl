@@ -3,7 +3,8 @@
   gitconfig_user_signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAWr2SKH9Wu+AET//maFYW0BbI9uHnzuG+9XRlloeWsV"
   {{- if (output "sh" "-c" "uname -r" | lower | contains "microsoft") }}
   is_wsl = true
-  windows_username = "{{ (output "sh" "-c" "basename $(wslpath $(wslvar USERPROFILE))" | trim) }}"
+  {{- /* cmd.exe rather than wslvar: wslu isn't packaged on every Ubuntu release */}}
+  windows_username = "{{ (output "sh" "-c" `basename "$(wslpath "$(cd /mnt/c && cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')")"` | trim) }}"
   {{- else }}
   is_wsl = false
   windows_username = "UNSET"
