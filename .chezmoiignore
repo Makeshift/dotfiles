@@ -4,3 +4,14 @@ dotfiles.code-workspace
 .ssh/known_hosts
 .ssh/id_*
 test
+
+{{- if not (get . "enable_explainshell") }}
+.config/services/explainshell
+.config/systemd/user/explainshell.service
+{{- end }}
+
+{{- if not .is_wsl }}
+.config/systemd/user/fix-ssh-portproxy.*
+bin/fix-ssh-portproxy
+bin/wsl_drop_cache
+{{- end }}

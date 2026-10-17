@@ -10,3 +10,5 @@
   windows_username = "UNSET"
   {{- end }}
   dynamic_app_download_path = "/usr/local/bin"
+  {{- /* Heavy optional services. Change later with `chezmoi edit-config` then `chezmoi apply`. */}}
+  enable_explainshell = {{ promptBoolOnce . "enable_explainshell" "Run the explainshell docker service (pulls a large image)" false }}

@@ -1,0 +1,32 @@
+#!/bin/bash
+# Reloads user systemd and enables or disables the managed units whenever a unit file or feature toggle changes.
+# unit file hashes: {{ range (glob (joinPath .chezmoi.sourceDir "private_dot_config/systemd/user/*")) }}{{ include . | sha256sum | trunc 12 }} {{ end }}
+# toggles: explainshell={{ get . "enable_explainshell" }} wsl={{ .is_wsl }}
+set -euo pipefail
+
+if ! command -v systemctl >/dev/null || ! systemctl --user show-environment >/dev/null 2>&1; then
+  echo "No user systemd manager running; skipping unit setup." >&2
+  exit 0
+fi
+
+systemctl --user daemon-reload
+
+enable=(ssh-key-sync.timer)
+disable=()
+{{- if .is_wsl }}
+enable+=(fix-ssh-portproxy.timer)
+{{- end }}
+{{- if get . "enable_explainshell" }}
+enable+=(explainshell.service)
+{{- else }}
+disable+=(explainshell.service)
+{{- end }}
+
+for unit in "${enable[@]}"; do
+  systemctl --user enable --now "$unit"
+done
+for unit in "${disable[@]}"; do
+  if systemctl --user cat "$unit" >/dev/null 2>&1; then
+    systemctl --user disable --now "$unit"
+  fi
+done
