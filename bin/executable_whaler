@@ -1,3 +1,6 @@
-#!/bin/bash
-# Generates dockerfiles from an image
-docker run -t --rm -v /var/run/docker.sock:/var/run/docker.sock:ro pegleg/whaler $@
+#!/usr/bin/env bash
+# desc: Reconstruct a Dockerfile from an existing image, using the pegleg/whaler image.
+# source: https://github.com/P3GLEG/Whaler
+# usage: whaler [-sV] IMAGE
+. "$HOME/.lib/docker-tool.sh"
+docker_tool -s pegleg/whaler "$@"

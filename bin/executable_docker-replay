@@ -1,6 +1,6 @@
-#!/bin/bash
-# Generates docker run commands from running containers
-docker run --rm -ti \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  bcicen/docker-replay \
-  -p "$@"
+#!/usr/bin/env bash
+# desc: Print the docker run command that would recreate a running container.
+# source: https://github.com/bcicen/docker-replay
+# usage: docker-replay CONTAINER
+. "$HOME/.lib/docker-tool.sh"
+docker_tool -s bcicen/docker-replay -p "$@"
