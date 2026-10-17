@@ -63,24 +63,17 @@ Note that if chezmoi hangs waiting for user input, you will need to kill the pro
 
 (See `test/Dockerfile` for a minimal example on an Ubuntu base image)
 
-Most other tools are downloaded specifically for your architecture (if able) as-needed using wrapper scripts. The order of your PATH shouldn't matter too much, as the wrapper will specifically exclude itself when figuring out where the application binary is. If a tool isn't automatically installed or if it doesn't give documentation on how to install it when running, [open an issue](https://github.com/Makeshift/dotfiles/issues).
+Other tools come from [mise](https://mise.jdx.dev), configured in `private_dot_config/mise/config.toml`. `chezmoi apply` installs mise if it's missing, then installs the tools that shell startup needs. Tools marked `lazy = true` install the first time you run them.
 
-The PATH set by `.bashrc` in this package is specifically ordered:
+The shell config lives in `exact_dot_shellrc.d`, which both bash and zsh source: `*.always.sh` for every shell, `*.interactive.sh` for interactive ones. Scripts branch on `$BASH_VERSION`/`$ZSH_VERSION` where the shells differ. The PATH order is in `exact_dot_shellrc.d/executable_10_path.always.sh`.
 
-* `$HOME/bin`
-* `$HOME/work_bin`
-* `$HOME/.local/bin`
-* `$HOME/go/bin`
-* `$HOME/.cargo/bin`
-* `/usr/local/go/bin`
-* `/usr/local/sbin`
-* `/usr/local/bin`
-* `/usr/sbin`
-* `/usr/bin`
-* `/sbin`
-* `/bin`
+## Scripts in `bin/`
 
-Other locations may be added by other tools that are invoked by the scripts.
+Each script's second line is `# desc: <what it does>`. `bin-index` caches those lines, so the scripts show up with descriptions in zsh tab completion, and `bins [words]` fuzzy-searches them by name or description.
+
+## Optional services
+
+`chezmoi init` asks whether to enable heavy services such as explainshell. Change an answer with `chezmoi edit-config`, then `chezmoi apply`; user systemd units are enabled or disabled to match.
 
 ## Testing
 
