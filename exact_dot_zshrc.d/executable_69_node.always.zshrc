@@ -22,8 +22,10 @@ load-nvmrc() {
   fi
 }
 
-add-zsh-hook chpwd load-nvmrc
-load-nvmrc
+if (( $+functions[nvm_find_nvmrc] )); then
+  add-zsh-hook chpwd load-nvmrc
+  load-nvmrc
+fi
 
 export PNPM_HOME="$HOME/.local/share/pnpm"
 [[ ":$PATH:" != *":$PNPM_HOME:"* ]] && export PATH="$PNPM_HOME:$PATH"
