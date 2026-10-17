@@ -2,5 +2,6 @@
 # desc: Reconstruct a Dockerfile from an existing image, using the pegleg/whaler image.
 # source: https://github.com/P3GLEG/Whaler
 # usage: whaler [-sV] IMAGE
-. "$HOME/.lib/docker-tool.sh"
+# shellcheck source=docker-tool.sh
+. "${BASH_SOURCE[0]%/*}/docker-tool.sh"
 docker_tool -s pegleg/whaler "$@"

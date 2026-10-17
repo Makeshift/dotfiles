@@ -1,4 +1,5 @@
 # desc: Shared helper for ~/bin scripts that run a CLI from a docker image.
+# Not executable, so it stays off the command list; scripts source it from their own directory.
 # Source this file, then: docker_tool [-s] [-w] [-u] [-e VAR]... [-v SRC:DST]... IMAGE [ARGS...]
 #   -s  mount the docker socket     -w  mount $PWD at /work and run there
 #   -u  run as the calling user     -e  pass VAR through if it is set

@@ -2,5 +2,6 @@
 # desc: Print the docker run command that would recreate a running container.
 # source: https://github.com/bcicen/docker-replay
 # usage: docker-replay CONTAINER
-. "$HOME/.lib/docker-tool.sh"
+# shellcheck source=docker-tool.sh
+. "${BASH_SOURCE[0]%/*}/docker-tool.sh"
 docker_tool -s bcicen/docker-replay -p "$@"
