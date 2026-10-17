@@ -1,0 +1,5 @@
+# Read by every zsh, including non-interactive ones that never load .zshrc.
+case ":$PATH:" in
+  *":$HOME/.local/share/mise/shims:"*) ;;
+  *) export PATH="$HOME/.local/share/mise/shims:$PATH" ;;
+esac

@@ -1,5 +1,5 @@
 [Unit]
-Description=Run ssk-key-sync every 6 hours
+Description=Run ssh-key-sync every 6 hours
 
 [Timer]
 OnBootSec=5min

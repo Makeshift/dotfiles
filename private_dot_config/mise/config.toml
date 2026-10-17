@@ -1,5 +1,29 @@
+# Tools for the dotfiles. Lazy tools install the first time one of their commands runs;
+# the rest install on `chezmoi apply` (run_onchange_after_10-mise-install.sh.tmpl).
+
 [env]
 _.python.venv = { path = "{{env.HOME}}/.cache/mise-venv/", create = true }
 
 [tools]
+# Needed by shell startup, chezmoi scripts or systemd units.
 python = "latest"
+chezmoi = "latest"
+carapace = "latest"
+fzf = "latest"
+"github:shoenig/ssh-key-sync" = "latest"
+
+# On demand.
+jq = { version = "latest", lazy = true }
+ripgrep = { version = "latest", lazy = true }
+dive = { version = "latest", lazy = true }
+tokei = { version = "latest", lazy = true, lazy_bins = ["tokei"] }
+regctl = { version = "latest", lazy = true }
+eza = { version = "latest", lazy = true }
+bat = { version = "latest", lazy = true }
+dust = { version = "latest", lazy = true }
+glow = { version = "latest", lazy = true }
+micro = { version = "latest", lazy = true }
+"github:makeshift/granted" = { version = "latest", lazy = true, lazy_bins = ["granted"] }
+"github:containrrr/shoutrrr" = { version = "latest", lazy = true, lazy_bins = ["shoutrrr"] }
+"pipx:yawsso" = { version = "latest", lazy = true, lazy_bins = ["yawsso"] }
+"cargo:loop-rs" = { version = "latest", lazy = true, lazy_bins = ["loop"] }
