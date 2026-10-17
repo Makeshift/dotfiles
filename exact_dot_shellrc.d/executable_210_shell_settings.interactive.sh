@@ -31,6 +31,4 @@ if [ -n "$BASH_VERSION" ]; then
   export CDPATH=:..:$HOME
 
   shopt -s autocd expand_aliases checkwinsize histappend cmdhist nocaseglob nocasematch cdspell dirspell globstar
-
-  [ -f "$HOME/liquidprompt/liquidprompt" ] && . "$HOME/liquidprompt/liquidprompt"
 fi

@@ -2,6 +2,8 @@
 .bashrc.d
 .zshrc.d
 .eget.toml
+.liquidpromptrc
+liquidprompt
 .config/resh.toml
 .config/cod
 .config/fastfetch/config.conf.bak

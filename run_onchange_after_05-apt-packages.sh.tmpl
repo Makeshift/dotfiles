@@ -1,0 +1,17 @@
+#!/bin/sh
+# Installs the missing apt packages listed in .chezmoidata.toml; asks for sudo only when something is missing.
+# packages: {{ .apt.packages | join " " }}
+set -eu
+
+command -v apt-get >/dev/null || { echo "No apt-get; skipping system packages." >&2; exit 0; }
+
+missing=""
+for pkg in {{ .apt.packages | join " " }}; do
+  dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q 'install ok installed' || missing="$missing $pkg"
+done
+[ -n "$missing" ] || exit 0
+
+echo "Installing apt packages:$missing"
+sudo apt-get update
+# shellcheck disable=SC2086
+sudo apt-get install -y $missing

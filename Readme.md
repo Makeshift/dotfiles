@@ -65,6 +65,8 @@ Note that if chezmoi hangs waiting for user input, you will need to kill the pro
 
 Other tools come from [mise](https://mise.jdx.dev), configured in `private_dot_config/mise/config.toml`. `chezmoi apply` installs mise if it's missing, then installs the tools that shell startup needs. Tools marked `lazy = true` install the first time you run them.
 
+Python comes from [uv](https://docs.astral.sh/uv/): `uv python install --default` provides `python`/`python3` in `~/.local/bin`, and Python CLIs are uv tools. Both are listed in `.chezmoidata.toml`, as are the apt packages `chezmoi apply` installs when they're missing (it asks for sudo only then). Scripts call Python CLIs through `uvx`.
+
 The shell config lives in `exact_dot_shellrc.d`, which both bash and zsh source: `*.always.sh` for every shell, `*.interactive.sh` for interactive ones. Scripts branch on `$BASH_VERSION`/`$ZSH_VERSION` where the shells differ. The PATH order is in `exact_dot_shellrc.d/executable_10_path.always.sh`.
 
 ## Scripts in `bin/`
