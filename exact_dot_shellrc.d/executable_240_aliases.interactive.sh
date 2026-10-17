@@ -86,27 +86,6 @@ top10net() {
 # Remembering bc exists is hard
 math() { echo 'scale=5;' "$@" | bc -l; }
 
-# https://github.com/DannyBen/alf
-load_alf_aliases() {
-  local generated_aliases
-  local generated_function
-  [[ -f "$HOME/.shellrc.d/alf.conf" ]] || return
-  command -v alf >/dev/null || return
-  # alf only reads alf.conf from the working directory.
-  generated_aliases="$(builtin cd "$HOME/.shellrc.d" && alf generate 2>/dev/null)" || return
-
-  while IFS= read -r generated_function; do
-    unalias "$generated_function" 2>/dev/null
-  done < <(
-    printf '%s\n' "$generated_aliases" | sed -nE \
-      -e 's/^[[:space:]]*function[[:space:]]+([A-Za-z_][A-Za-z0-9_:-]*).*/\1/p' \
-      -e 's/^[[:space:]]*([A-Za-z_][A-Za-z0-9_:-]*)[[:space:]]*\(\)[[:space:]]*\{.*/\1/p'
-  )
-
-  [ -n "$ZSH_VERSION" ] && emulate -L zsh -o no_aliases
-  eval "$generated_aliases"
-}
-
 dcu() {
   docker compose "$@" up -d
   docker compose "$@" logs -f --tail 50
@@ -143,5 +122,3 @@ if [ -n "$BASH_VERSION" ]; then
     fi
   }
 fi
-load_alf_aliases
-unset -f load_alf_aliases

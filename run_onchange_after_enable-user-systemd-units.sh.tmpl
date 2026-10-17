@@ -4,7 +4,7 @@
 # toggles: explainshell={{ get . "enable_explainshell" }} wsl={{ .is_wsl }}
 set -euo pipefail
 
-if ! command -v systemctl >/dev/null || ! systemctl --user show-environment >/dev/null 2>&1; then
+if [ ! -d /run/systemd/system ] || ! systemctl --user show-environment >/dev/null 2>&1; then
   echo "No user systemd manager running; skipping unit setup." >&2
   exit 0
 fi
