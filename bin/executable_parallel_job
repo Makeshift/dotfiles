@@ -12,14 +12,12 @@ fi
 
 file="$1"
 if [ -z "$1" ]; then
-    tmp=true
     file=$(mktemp)
+    trap 'rm -f "$file"' EXIT
     "${EDITOR:-nano}" "$file"
 fi
-if [[ $(stat -c %s "$file") < 1 ]]; then
-    echo "File size not big enough, cancelled."
+if [ ! -s "$file" ]; then
+    echo "No jobs in $file, cancelled." >&2
+    exit 1
 fi
 time parallel :::: "$file"
-# if [ ! -z "$tmp" ]; then
-#     rm "$tmp" 2> /dev/null
-# fi

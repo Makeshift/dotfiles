@@ -53,7 +53,7 @@ httpGet()
 encrypt()
 {
   echo "Encrypting $1..."
-  openssl enc -aes-256-cbc -salt -a -in "$1" -out "$2" || { echo "File not found"; return 1; }
+  openssl enc -aes-256-cbc -salt -pbkdf2 -iter 600000 -a -in "$1" -out "$2" || { echo "File not found"; return 1; }
   echo "Successfully encrypted"
 }
 
@@ -61,7 +61,14 @@ encrypt()
 decrypt()
 {
   echo "Decrypting $1..."
-  openssl enc -aes-256-cbc -d -a -in "$1" -out "$2" || { echo "File not found"; return 1; }
+  # Local change from upstream: PBKDF2 keys, falling back to the legacy key derivation for older files.
+  local CRYPT_PASS
+  read -r -s -p "enter AES-256-CBC decryption password:" CRYPT_PASS
+  echo
+  export CRYPT_PASS
+  openssl enc -aes-256-cbc -d -pbkdf2 -iter 600000 -a -pass env:CRYPT_PASS -in "$1" -out "$2" 2>/dev/null ||
+    openssl enc -aes-256-cbc -d -a -pass env:CRYPT_PASS -in "$1" -out "$2" || { unset CRYPT_PASS; echo "Decryption failed"; return 1; }
+  unset CRYPT_PASS
   echo "Successfully decrypted"
 }
 

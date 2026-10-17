@@ -6,6 +6,7 @@
 set -x
 set -e
 
-FILE_TO_RESTORE=$(readlink -e $1)
-mv -n ${FILE_TO_RESTORE} ${FILE_TO_RESTORE}.bak
-apt-get -o Dpkg::Options::="--force-confmiss" install --reinstall $(dpkg -S ${FILE_TO_RESTORE} | head -1 | cut -d ':' -f1)
+FILE_TO_RESTORE=$(readlink -e "$1")
+PACKAGE=$(dpkg -S "$FILE_TO_RESTORE" | head -1 | cut -d ':' -f1)
+mv -n "$FILE_TO_RESTORE" "$FILE_TO_RESTORE.bak"
+apt-get -o Dpkg::Options::="--force-confmiss" install --reinstall "$PACKAGE"

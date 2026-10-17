@@ -1,8 +1,19 @@
 #!/bin/sh
-# desc: Minimal xclip stand-in using the Windows clipboard; -in copies stdin, else pastes.
+# desc: Minimal xclip stand-in using the Windows clipboard; copies stdin, or pastes with -o.
+# Like xclip, it copies by default; -selection and its argument are accepted and ignored.
 
-if [ "$1" = "-in" ]; then
-  powershell.exe '$Input | Set-Clipboard'
+mode=in
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -o | -out) mode=out ;;
+    -i | -in) mode=in ;;
+    -selection | -sel) shift ;;
+  esac
+  shift
+done
+
+if [ "$mode" = out ]; then
+  powershell.exe -NoProfile -Command Get-Clipboard | tr -d '\r'
 else
-  powershell.exe Get-Clipboard
+  powershell.exe -NoProfile -Command '$Input | Set-Clipboard'
 fi

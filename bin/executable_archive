@@ -2,17 +2,11 @@
 # desc: Create a .tar.xz archive of the given files or folders.
 # usage: archive <file or folder ...> [name.tar.xz]
 
-read -r -d '' HELP <<EOF
-Creates an .tar.xz archive of a file or folder
-
-Usage: ${0} <file or folder ...> [archive name]
-
-Arguments:
-
-
-Depends on bash 4.3+
-TODO: Write this properly
-EOF
+if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+  echo "Usage: ${0##*/} <file or folder ...> [name.tar.xz]"
+  echo "Without a name, uses the single input's name, or the current directory's for several inputs."
+  exit 1
+fi
 
 function archive() {
   local name filelist=("${@}")
@@ -32,7 +26,8 @@ function archive() {
     # Create the archive
     tar -cJf "$name" "${filelist[@]}"
   else
-    echo "'$1' is not a valid file or directory!"
+    echo "'$1' is not a valid file or directory!" >&2
+    return 1
   fi
 }
 

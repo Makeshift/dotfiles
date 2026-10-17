@@ -4,12 +4,13 @@ if [ -n "$1" ] && [[ ! $1 =~ ^[0-9]+$ ]]; then
     echo -e "
 Usage: ${0} [port]
 
-Will stream your current shell session to the given port (Default .
+Will stream your current shell session to the given port (default 8000, or the next free port).
 People can then see your terminal by using 'nc <yourip> <port>'
 Use Ctrl+D (or type exit) to kill the stream.
     "
     exit 1
 fi
+# shellcheck source=executable_colors
 source colors
 # Output some useful IPs
 echo -e "${Yellow}Local:${R}\n$(ifconfig -a | /bin/grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, ""); print "    "$0 }')"

@@ -35,14 +35,10 @@ function bash_server() {
     cat .$g)|nc -l -p $1;}>/dev/fd/0;$0 $1
 }
 
-# If python3 is available, use python3. If the server fails to start, switch to python2
-# then if python2 is available, use python2. If the server fails to start, switch to node
-# then if npm & node is available, make sure http-server is installed. If the server fails to start, switch to netcat
-# if the netcat can't run, we're all out of ideas.
-echo "Attempting to start server on port " $port
-if python=$(type -P python3 || (type -P python > /dev/null && [[ "$(python --version)" =~ Python\ 3* ]] )) && "${python}" -m http.server "${port}"; then true
-    elif python=$(type -P python2 > /dev/null || (type -P python > /dev/null && [[ "$(python --version)" =~ Python\ 2* ]] )) && "${python}" -m SimpleHTTPServer "${port}"; then true
-    elif type -P npm > /dev/null && type -P node > /dev/null && npm install -g http-server && http-server . -p "${port}"; then true
+echo "Attempting to start server on port $port"
+if type -P python3 > /dev/null && python3 -m http.server "${port}"; then true
+    elif type -P python2 > /dev/null && python2 -m SimpleHTTPServer "${port}"; then true
+    elif type -P npx > /dev/null && npx --yes http-server . -p "${port}"; then true
     elif bash_server "${port}"; then true
 else echo "We literally couldn't run any kind of webserver."
 fi
