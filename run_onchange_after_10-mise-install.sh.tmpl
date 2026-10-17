@@ -1,6 +1,6 @@
 #!/bin/sh
 # Installs the non-lazy mise tools and rebuilds shims whenever the mise config changes.
-# mise config hash: {{ include "private_dot_config/mise/config.toml" | sha256sum }}
+# mise config hash: {{ includeTemplate "private_dot_config/mise/config.toml.tmpl" . | sha256sum }}
 set -eu
 
 mise="$HOME/.local/bin/mise"

@@ -27,5 +27,10 @@ regctl = { version = "latest", lazy = true }
 "github:containrrr/shoutrrr" = { version = "latest", lazy = true, lazy_bins = ["shoutrrr"] }
 act = { version = "latest", lazy = true, lazy_bins = ["act"] }
 "github:asdine/cueimports" = { version = "latest", lazy = true, lazy_bins = ["cueimports"] }
+age = { version = "latest", lazy = true, lazy_bins = ["age", "age-keygen"] }
+{{- if not .is_wsl }}
+# On WSL, ~/bin/op links to the Windows op.exe instead, which can unlock through the desktop app.
+1password = { version = "latest", lazy = true, lazy_bins = ["op"] }
+{{- end }}
 # A jar, not a binary: bin/apktool runs it with java.
 "github:iBotPeaches/Apktool" = { version = "latest", rename_exe = "apktool.jar" }
