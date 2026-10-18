@@ -1,0 +1,11 @@
+[Unit]
+Description=Sync ~/.claude config to the claude-config repo once a day
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=1h
+Unit=claude-config-sync.service
+
+[Install]
+WantedBy=timers.target

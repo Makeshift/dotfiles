@@ -11,7 +11,7 @@ fi
 
 systemctl --user daemon-reload
 
-enable=(ssh-key-sync.timer)
+enable=(ssh-key-sync.timer claude-config-sync.timer)
 disable=()
 {{- if .is_wsl }}
 enable+=(fix-ssh-portproxy.timer)

@@ -2,6 +2,7 @@
 .bashrc.d
 .zshrc.d
 .eget.toml
+.gitignore
 .lib
 .liquidpromptrc
 liquidprompt

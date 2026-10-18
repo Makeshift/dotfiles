@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# desc: Commit and push ~/.claude config and memory to the private claude-config repo, or run git against it.
+# usage: claude-config            commit any changes and push
+#        claude-config <git args> run git on the repo, e.g. claude-config status, claude-config log
+# The repo is bare at ~/.local/share/claude-config.git with $HOME as its work tree; the
+# whitelist of tracked paths is ~/.claude/claude-config.gitignore.
+set -euo pipefail
+
+git_dir="$HOME/.local/share/claude-config.git"
+if [ ! -d "$git_dir" ]; then
+  echo "No claude-config repo at $git_dir; nothing to do." >&2
+  exit 0
+fi
+cg() { git --git-dir="$git_dir" --work-tree="$HOME" "$@"; }
+cd "$HOME"
+
+if [ $# -gt 0 ]; then
+  cg "$@"
+  exit
+fi
+
+cg add -A
+if cg diff --cached --quiet; then
+  echo "No changes to commit."
+else
+  cg commit -q -m "Sync from $(hostname) on $(date +%F)"
+  echo "Committed: $(cg log -1 --format=%s) ($(cg show --stat --format= HEAD | tail -1))"
+fi
+cg push -q origin main

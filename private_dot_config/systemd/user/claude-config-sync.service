@@ -1,0 +1,6 @@
+[Unit]
+Description=Commit and push ~/.claude config to the claude-config repo
+
+[Service]
+Type=oneshot
+ExecStart=%h/bin/claude-config

@@ -99,9 +99,8 @@
 [core]
     pager = "diff-so-fancy | less --tabs=2 -RF"
     compression = 9
-    # Use custom `.gitignore` and `.gitattributes`.
-    excludesfile = ~/.gitignore
-    attributesfile = ~/.gitattributes
+    # Global ignores live at git's default ~/.config/git/ignore, not ~/.gitignore, which the
+    # claude-config repo (work tree $HOME) would read as its own root .gitignore.
 
     # Treat spaces before tabs and all kinds of trailing whitespace as an error.
     # [default] trailing-space: looks for spaces at the end of a line
