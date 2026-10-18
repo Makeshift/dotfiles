@@ -16,6 +16,7 @@
     "screen",
     "socat",
     "xz-utils",
+    "zsh",
   ]
 
 # Python CLIs, installed with `uv tool install` by run_onchange_after_15-uv-tools.sh.tmpl.
