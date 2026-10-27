@@ -6,8 +6,6 @@ termcapinfo xterm* ti@:te@
 startup_message off
 defscrollback 32000
 defutf8 on
-mousetrack on
-defmousetrack on
 
 bindkey ^[[1;7D prev
 bindkey ^[[1;7C next

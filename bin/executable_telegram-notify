@@ -29,7 +29,7 @@ done
 
 env_file="${TELEGRAM_NOTIFY_ENV:-}"
 if [[ -z $env_file ]]; then
-  for candidate in "${HOME:-/nonexistent}/.config/telegram-notify/env" /etc/telegram-notify.env; do
+  for candidate in "${HOME:-/nonexistent}/.telegram.env" "${HOME:-/nonexistent}/.config/telegram-notify/env" /etc/telegram-notify.env; do
     if [[ -r $candidate ]]; then
       env_file=$candidate
       break
@@ -39,12 +39,16 @@ fi
 [[ -n $env_file ]] || { echo "telegram-notify: no readable env file" >&2; exit 1; }
 # shellcheck source=/dev/null
 . "$env_file"
+token=${TELEGRAM_BOT_TOKEN:-${TELEGRAM_TOKEN:?telegram-notify: $env_file sets neither TELEGRAM_BOT_TOKEN nor TELEGRAM_TOKEN}}
+: "${TELEGRAM_CHAT_ID:?telegram-notify: TELEGRAM_CHAT_ID is not set in $env_file or the environment}"
 
 if (($#)); then text="$*"; else text=$(cat); fi
 
-if ((!urgent)); then
+# The idle check needs Claude session transcripts; a host without the helper always counts as idle.
+idle_helper="${BASH_SOURCE[0]%/*}/session-idle-seconds"
+if ((!urgent)) && [[ -x $idle_helper ]]; then
   window=$((idle_minutes * 60))
-  chat=$("${BASH_SOURCE[0]%/*}/session-idle-seconds")
+  chat=$("$idle_helper")
   if [[ -n $chat && $chat -lt $window ]]; then
     echo "skipped: Connor messaged this session ${chat}s ago"
     exit 0
@@ -61,6 +65,6 @@ if ((${#buttons[@]})); then
 fi
 
 response=$(curl -sS --retry 6 --retry-all-errors --retry-delay 10 \
-  "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" "${args[@]}")
+  "https://api.telegram.org/bot${token}/sendMessage" "${args[@]}")
 [[ $response == *'"ok":true'* ]] || { echo "telegram-notify: $response" >&2; exit 1; }
 echo sent
