@@ -1,0 +1,12 @@
+[Unit]
+Description=Keep Windows awake while Claude Code sessions in WSL are working
+Documentation=https://github.com/Makeshift/claude-remote-daemon/tree/main/keep-awake
+ConditionFileIsExecutable=%h/.local/bin/claude-keep-awake
+
+[Service]
+ExecStart=%h/.local/bin/claude-keep-awake run
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=default.target

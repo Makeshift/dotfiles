@@ -14,7 +14,7 @@ systemctl --user daemon-reload
 enable=(ssh-key-sync.timer claude-config-sync.timer)
 disable=()
 {{- if .is_wsl }}
-enable+=(fix-ssh-portproxy.timer)
+enable+=(fix-ssh-portproxy.timer claude-keep-awake.service)
 {{- end }}
 {{- if get . "enable_explainshell" }}
 enable+=(explainshell.service)

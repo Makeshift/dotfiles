@@ -215,6 +215,11 @@ docs
 .config/systemd/user/*.target.wants
 bin/code-cli*
 
+# Deliberately unmanaged: tied to this machine, or rewritten by their own tool.
+.bunfig.toml
+.config/htop
+bin/telegram-call
+
 # Backups and leftovers.
 .bash_logout
 .bashrc.log
@@ -233,6 +238,7 @@ bin/code-cli*
 
 {{- if not .is_wsl }}
 .config/systemd/user/fix-ssh-portproxy.*
+.config/systemd/user/claude-keep-awake.service
 bin/fix-ssh-portproxy
 bin/wsl_drop_cache
 bin/warp-pulumi-up
