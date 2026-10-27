@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+# desc: Keep Windows out of standby while any Claude Code session in this WSL distro is working.
+set -euo pipefail
+
+SESSIONS_DIR="${CLAUDE_KEEP_AWAKE_SESSIONS_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions}"
+INTERVAL="${CLAUDE_KEEP_AWAKE_INTERVAL:-30}"
+# Seconds to keep holding after the last session goes idle. Windows' own idle timer counts only
+# local keyboard and mouse input, so without this it can sleep the moment a reply finishes.
+GRACE="${CLAUDE_KEEP_AWAKE_GRACE:-3600}"
+POWERSHELL="${CLAUDE_KEEP_AWAKE_POWERSHELL:-/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe}"
+
+# ES_CONTINUOUS | ES_SYSTEM_REQUIRED, held until stdin closes so the request dies with this daemon.
+# Re-asserted every 30s on the same thread, because a sleep and resume drops the request.
+read -r -d '' HOLD_PS <<'EOF' || true
+Add-Type -Name P -Namespace W -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint f);'
+# A raw stream read, since Console.In's ReadToEndAsync blocks synchronously on Windows PowerShell.
+$eof = [Console]::OpenStandardInput().ReadAsync((New-Object byte[] 1), 0, 1)
+do { [void][W.P]::SetThreadExecutionState(2147483649) } until ($eof.Wait(30000))
+EOF
+
+# SystemExecutionState (16) is the system-wide OR of every process's request, readable without admin.
+read -r -d '' QUERY_PS <<'EOF' || true
+Add-Type -Name Q -Namespace W -MemberDefinition '[DllImport("powrprof.dll")] public static extern uint CallNtPowerInformation(int l, System.IntPtr i, uint il, out uint o, uint ol);'
+$s = 0; [void][W.Q]::CallNtPowerInformation(16, [IntPtr]::Zero, 0, [ref]$s, 4); "0x{0:X}" -f $s
+EOF
+
+HOLDER_PID=""
+HOLDER_FD=""
+
+usage() {
+  cat <<EOF
+Usage: ${0##*/} <command>
+
+  run      Hold Windows awake while any Claude Code session is working (what the service runs)
+  status   List live sessions, whether each counts as working, and the Windows execution state
+EOF
+}
+
+log() {
+  printf '%s\n' "$*"
+}
+
+die() {
+  printf '%s: %s\n' "${0##*/}" "$*" >&2
+  exit 1
+}
+
+encode_ps() {
+  printf '%s' "$1" | iconv -f utf-8 -t utf-16le | base64 -w0
+}
+
+run_ps() {
+  "$POWERSHELL" -NoProfile -NonInteractive -EncodedCommand "$(encode_ps "$1")" </dev/null 2>/dev/null | tr -d '\r'
+}
+
+# Reads a flat scalar field from a compact JSON object without needing jq.
+json_field() {
+  sed -n 's/.*"'"$1"'"[[:space:]]*:[[:space:]]*"\{0,1\}\([^",}]*\).*/\1/p' "$2"
+}
+
+# Field 22 of /proc/<pid>/stat, parsed after the last ')' because the command name may contain spaces.
+proc_start() {
+  local stat
+  stat=$(<"/proc/$1/stat") || return 1
+  stat=${stat##*) }
+  read -ra fields <<<"$stat"
+  printf '%s' "${fields[19]}"
+}
+
+# Prints tab-separated "<pid> <reason> <name>" for each session whose recorded process is still alive.
+# Names can contain spaces, so they come last and fields are split on tabs.
+# Session files outlive their process and PIDs get recycled, so the start time must match.
+list_sessions() {
+  local f pid start name status reason
+  for f in "$SESSIONS_DIR"/*.json; do
+    [[ -e $f ]] || continue
+    pid=$(json_field pid "$f")
+    [[ $pid =~ ^[0-9]+$ ]] || continue
+    start=$(proc_start "$pid" 2>/dev/null) || continue
+    [[ $start == "$(json_field procStart "$f")" ]] || continue
+    name=$(json_field name "$f")
+    status=$(json_field status "$f")
+    if [[ $status == busy ]]; then
+      reason=busy
+    elif pgrep -P "$pid" -f '/shell-snapshots/' >/dev/null; then
+      # A Bash tool command still running after the turn ended, e.g. a backgrounded build.
+      reason=shell
+    else
+      reason=idle
+    fi
+    printf '%s\t%s\t%s\n' "$pid" "$reason" "${name:-?}"
+  done
+}
+
+working_sessions() {
+  list_sessions | awk -F'\t' '$2 != "idle" { printf "%s%s (%s)", sep, $3, $2; sep=", " }'
+}
+
+holder_alive() {
+  [[ -n $HOLDER_PID ]] && kill -0 "$HOLDER_PID" 2>/dev/null
+}
+
+start_holder() {
+  exec {HOLDER_FD}> >(exec "$POWERSHELL" -NoProfile -NonInteractive -EncodedCommand "$(encode_ps "$HOLD_PS")" >/dev/null 2>&1)
+  HOLDER_PID=$!
+}
+
+stop_holder() {
+  [[ -n $HOLDER_FD ]] && exec {HOLDER_FD}>&-
+  [[ -n $HOLDER_PID ]] && kill "$HOLDER_PID" 2>/dev/null
+  HOLDER_PID=""
+  HOLDER_FD=""
+}
+
+preflight() {
+  [[ -x $POWERSHELL ]] || die "powershell.exe not found at $POWERSHELL (set CLAUDE_KEEP_AWAKE_POWERSHELL)"
+  [[ -n $(run_ps '"ok"') ]] || die "could not run powershell.exe; is WSL interop enabled?"
+}
+
+ensure_holder() {
+  if ! holder_alive; then
+    [[ -n $HOLDER_PID ]] && log "holder exited unexpectedly; restarting"
+    stop_holder
+    start_holder
+  fi
+}
+
+cmd_run() {
+  local working last="" last_active=0 now in_grace=""
+  preflight
+  trap 'stop_holder; exit 0' TERM INT
+  log "watching $SESSIONS_DIR every ${INTERVAL}s, holding ${GRACE}s past the last activity"
+  while :; do
+    working=$(working_sessions)
+    now=$(date +%s)
+    if [[ -n $working ]]; then
+      last_active=$now
+      in_grace=""
+      ensure_holder
+      [[ $working != "$last" ]] && log "holding awake: $working"
+    elif [[ -n $HOLDER_PID ]]; then
+      if ((now - last_active < GRACE)); then
+        ensure_holder
+        if [[ -z $in_grace ]]; then
+          log "all sessions idle; holding until $(date -d "@$((last_active + GRACE))" +%H:%M)"
+          in_grace=1
+        fi
+      else
+        stop_holder
+        in_grace=""
+        log "idle for ${GRACE}s; released"
+      fi
+    fi
+    last=$working
+    sleep "$INTERVAL" &
+    wait $! || true
+  done
+}
+
+cmd_status() {
+  local sessions
+  preflight
+  sessions=$(list_sessions)
+  if [[ -n $sessions ]]; then
+    {
+      printf 'PID\tSTATE\tNAME\n'
+      printf '%s\n' "$sessions"
+    } | column -t -s "$(printf '\t')"
+  else
+    log "no live sessions in $SESSIONS_DIR"
+  fi
+  log "Windows SystemExecutionState: $(run_ps "$QUERY_PS") (bit 0x1 set = held awake)"
+}
+
+case "${1:-}" in
+  run) cmd_run ;;
+  status) cmd_status ;;
+  -h | --help | help) usage ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac

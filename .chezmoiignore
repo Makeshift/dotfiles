@@ -239,6 +239,7 @@ bin/telegram-call
 {{- if not .is_wsl }}
 .config/systemd/user/fix-ssh-portproxy.*
 .config/systemd/user/claude-keep-awake.service
+bin/claude-keep-awake
 bin/fix-ssh-portproxy
 bin/wsl_drop_cache
 bin/warp-pulumi-up
