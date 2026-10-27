@@ -1,7 +1,7 @@
 #### Replace built-ins right at the end so other scripts don't cause issues ####
 
 if command -v eza >/dev/null; then
-  alias ls='eza -F'
+  alias ls='eza --classify=auto'
 fi
 
 if command -v bat >/dev/null; then
