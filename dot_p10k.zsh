@@ -1810,6 +1810,9 @@
   #               typed after changing current working directory.
   typeset -g POWERLEVEL9K_TRANSIENT_PROMPT=always
 
+  # Emit OSC 133 prompt/command/output marks so the terminal can find each command's boundaries.
+  typeset -g POWERLEVEL9K_TERM_SHELL_INTEGRATION=true
+
   # Instant prompt mode.
   #
   #   - off:     Disable instant prompt. Choose this if you've tried instant prompt and found

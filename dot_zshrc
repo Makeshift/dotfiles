@@ -167,5 +167,25 @@ bindkey '\e[4~' end-of-line                # End: move to the end of the line
 bindkey '\e[3~' delete-char                # Delete: delete the character under the cursor
 bindkey '\e[2~' quoted-insert              # Insert: insert the next character literally
 
+# Shade typed commands a shade lighter than the Monokai Pro background so they stand out from output.
+zle_highlight=(default:bg=#3A363B)
+# GNU screen 4.x misparses 24-bit colour codes, so map to the nearest 256-colour there.
+[[ -z $STY ]] || zmodload zsh/nearcolor
+
+# Extend the shading across the input line with shaded padding. Assumes p10k's last prompt line is
+# "❯ " and leaves room for its right frame.
+_shade_input_line() {
+  local last=${BUFFER##*$'\n'}
+  local start=2
+  [[ $BUFFER == *$'\n'* ]] && start=0
+  local used=$(( (start + ${(m)#last}) % COLUMNS ))
+  local pad=$(( COLUMNS - used - 3 ))
+  (( pad > 0 )) || pad=0
+  POSTDISPLAY=${(l:pad:: :)}
+}
+autoload -Uz add-zle-hook-widget
+add-zle-hook-widget line-init _shade_input_line
+add-zle-hook-widget line-pre-redraw _shade_input_line
+
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
