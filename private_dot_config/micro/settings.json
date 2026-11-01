@@ -6,8 +6,10 @@
     "mkparents": true,
     "rmtrailingws": true,
     "savecursor": true,
+    "softwrap": true,
     "status": true,
     "tabstospaces": true,
     "useprimary": false,
+    "wordwrap": true,
     "xterm": true
 }
