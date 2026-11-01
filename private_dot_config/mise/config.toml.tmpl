@@ -3,6 +3,10 @@
 
 # Python and Python CLIs come from uv instead (.chezmoidata.toml).
 
+[settings]
+# Honour a project's .nvmrc, .node-version, or package.json packageManager.
+idiomatic_version_file_enable_tools = ["node", "pnpm"]
+
 [tools]
 # Needed by shell startup, chezmoi scripts or systemd units.
 chezmoi = "latest"
@@ -20,6 +24,14 @@ uv = "latest"
 direnv = "latest"
 # LD_PRELOADed by shellrc.d/08_stderred. Pinned: mise hides releases younger than 24h from "latest".
 "github:Makeshift/stderred" = "1.1.1"
+# Claude Code starts these language servers by name; bdata backs the Bright Data skills.
+node = "24"
+"npm:bash-language-server" = "latest"
+"npm:typescript-language-server" = "latest"
+"npm:typescript" = "latest"
+"npm:pyright" = "latest"
+"npm:yaml-language-server" = "latest"
+"npm:@brightdata/cli" = "latest"
 
 # On demand.
 jq = { version = "latest", lazy = true }
@@ -32,6 +44,15 @@ regctl = { version = "latest", lazy = true }
 act = { version = "latest", lazy = true, lazy_bins = ["act"] }
 "github:asdine/cueimports" = { version = "latest", lazy = true, lazy_bins = ["cueimports"] }
 age = { version = "latest", lazy = true, lazy_bins = ["age", "age-keygen"] }
+pnpm = { version = "latest", lazy = true, lazy_bins = ["pnpm", "pnpx"] }
+"npm:@browsermcp/mcp" = { version = "latest", lazy = true, lazy_bins = ["mcp-server-browsermcp"] }
+"npm:@cloudcli-ai/cloudcli" = { version = "latest", lazy = true, lazy_bins = ["cloudcli"] }
+"npm:@siteboon/claude-code-ui" = { version = "latest", lazy = true, lazy_bins = ["claude-code-ui"] }
+"npm:@sinclair/hammer" = { version = "latest", lazy = true, lazy_bins = ["hammer"] }
+"npm:happy" = { version = "latest", lazy = true, lazy_bins = ["happy", "happy-mcp"] }
+"npm:opencode-ai" = { version = "latest", lazy = true, lazy_bins = ["opencode"] }
+"npm:quicktype" = { version = "latest", lazy = true, lazy_bins = ["quicktype"] }
+"npm:task-master-ai" = { version = "latest", lazy = true, lazy_bins = ["task-master", "task-master-ai", "task-master-mcp"] }
 {{- if not .is_wsl }}
 # On WSL, ~/bin/op links to the Windows op.exe instead, which can unlock through the desktop app.
 1password = { version = "latest", lazy = true, lazy_bins = ["op"] }
