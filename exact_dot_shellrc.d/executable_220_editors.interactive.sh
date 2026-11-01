@@ -9,3 +9,8 @@ elif command -v vim >/dev/null; then
 elif command -v vi >/dev/null; then
   export EDITOR=vi
 fi
+
+alias micro='$EDITOR'
+alias nano='$EDITOR'
+alias vim='$EDITOR'
+alias vi='$EDITOR'
