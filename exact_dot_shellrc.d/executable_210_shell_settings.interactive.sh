@@ -1,4 +1,7 @@
-export COLORTERM=truecolor
+# GNU screen 4.x misparses 24-bit colour codes as random attributes.
+if [ -z "$STY" ]; then
+  export COLORTERM=truecolor
+fi
 
 # zsh gets history, cd and completion behaviour from oh-my-zsh.
 if [ -n "$BASH_VERSION" ]; then
