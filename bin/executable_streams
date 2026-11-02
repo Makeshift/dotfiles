@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""Run a command and show each output stream on its own background colour, in true write order.
+
+Usage: streams [-f FD,FD,...] command [args...]   (default fds: 1,2)
+
+Each stream is given its own pipe, and strace records every write() to those pipes. The
+record is serialised by the kernel, so the order shown is the order the writes happened.
+"""
+import fcntl
+import os
+import re
+import shutil
+import subprocess
+import sys
+import threading
+
+# 256-colour backgrounds, dark enough for white text; cycled by stream position.
+PALETTE = [24, 88, 22, 94, 54, 30, 130, 60, 240, 52]
+ANSI = re.compile(rb"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)")
+# Streams are matched by pipe inode, not fd number: shells dup2 a stream onto another fd before writing.
+CALL = re.compile(r"^(?:\[pid\s+\d+\]\s+|\d+\s+)?(?:write|writev|pwrite64|pwritev2?)\(\d+<((?:\\x[0-9a-f]{2})*)>,(.*)")
+PIPE = re.compile(r"^pipe:\[(\d+)\]$")
+STRING = re.compile(r'"((?:\\x[0-9a-f]{2})*)"(\.\.\.)?')
+MAX_WRITE = 1 << 20
+# Pipe write ends are parked at or above this fd so they can't collide with a requested stream.
+PARK_FD = 100
+
+
+def unhex(text):
+    """Decode strace's -xx escaping."""
+    return bytes.fromhex(text.replace("\\x", ""))
+
+
+def drain(fd):
+    """Discard what arrives on a pipe so the writer never blocks."""
+    while os.read(fd, 65536):
+        pass
+
+
+def render(trace, colours):
+    """Turn strace lines into coloured output on stdout."""
+    out = sys.stdout.buffer
+    for line in trace:
+        match = CALL.match(line.decode("ascii", "replace"))
+        if not match:
+            continue
+        pipe = PIPE.match(unhex(match.group(1)).decode("utf-8", "replace"))
+        colour = pipe and colours.get(int(pipe.group(1)))
+        if colour is None:
+            continue
+        bg = f"\x1b[97;48;5;{colour}m".encode()
+        for hexdata, truncated in STRING.findall(match.group(2)):
+            data = ANSI.sub(b"", unhex(hexdata))
+            if truncated:
+                data += f"[streams: write over {MAX_WRITE} bytes truncated]\n".encode()
+            for piece in data.splitlines(keepends=True):
+                if piece.endswith(b"\n"):
+                    out.write(bg + piece[:-1] + b"\x1b[K\x1b[0m\n")
+                else:
+                    out.write(bg + piece + b"\x1b[0m")
+        out.flush()
+
+
+def main():
+    """Parse arguments, run the command under strace and render its writes."""
+    args = sys.argv[1:]
+    fds = [1, 2]
+    if args[:1] == ["-f"] and len(args) > 1:
+        fds = [int(fd) for fd in args[1].split(",")]
+        args = args[2:]
+    if not args:
+        sys.exit(__doc__)
+    if not shutil.which("strace"):
+        sys.exit("streams: strace is not installed")
+
+    trace_read, trace_write = os.pipe()
+    colours, parked, redirects = {}, [trace_write], [f"{trace_write}>&-"]
+    for i, fd in enumerate(fds):
+        read_end, write_end = os.pipe()
+        high = fcntl.fcntl(write_end, fcntl.F_DUPFD, PARK_FD)
+        os.close(write_end)
+        colours[os.fstat(read_end).st_ino] = PALETTE[i % len(PALETTE)]
+        parked.append(high)
+        redirects.append(f"{fd}>&{high} {high}>&-")
+        threading.Thread(target=drain, args=(read_end,), daemon=True).start()
+
+    strace = subprocess.Popen(
+        [
+            "strace", "-f", "-qq", "-xx", "-y", "-s", str(MAX_WRITE), "-o", f"/dev/fd/{trace_write}",
+            "-e", "trace=write,writev,pwrite64,pwritev,pwritev2", "-e", "signal=none",
+            # bash, not sh: dash rejects fd numbers above 9.
+            "--", "bash", "-c", f'exec "$@" {" ".join(redirects)}', "bash", *args,
+        ],
+        pass_fds=parked,
+        env={**os.environ, "NO_COLOR": "1"},
+    )
+    for fd in parked:
+        os.close(fd)
+    try:
+        with os.fdopen(trace_read, "rb") as trace:
+            render(trace, colours)
+    except KeyboardInterrupt:
+        pass
+    sys.exit(strace.wait())
+
+
+if __name__ == "__main__":
+    main()
