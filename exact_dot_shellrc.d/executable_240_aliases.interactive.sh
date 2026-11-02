@@ -29,6 +29,19 @@ chezmoi() {
   fi
 }
 
+# Forces me to learn tmux, keeping `screen -x [name]` as attach; `command screen` for the real one
+screen() {
+  if [[ "$1" == '-x' ]]; then
+    if [[ -n "$2" ]]; then
+      tmux attach -t "$2"
+    else
+      tmux attach
+    fi
+  else
+    tmux "$@"
+  fi
+}
+
 # Add an 'apt whatprovides' command, because I constantly forget apt doesn't have whatprovides
 apt() {
   if [[ "$1" == 'whatprovides' ]]; then
